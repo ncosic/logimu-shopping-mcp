@@ -30,7 +30,7 @@ TOOLS = [
             "list (use search). "
             "RETURNS current price, BSR, rating, review count, stock, buy-box seller and seller "
             "count, plus an observed_at freshness stamp, full price_history and stock_history back "
-            "to first observation (with 30-day convenience views), change events tagged with the "
+            "to first observation (keyed; the free lane carries the 30-day views), change events tagged with the "
             "buy-box seller at each change, the current all-seller offer table with 30-day buy-box "
             "days, the bought-past-month badge (measured aggregate buyer behavior, not an estimate), and "
             "brand stats. For the ~17% of the catalog with "
@@ -42,7 +42,10 @@ TOOLS = [
             "site-wide prices. "
             "MARKETPLACES us, uk, de, ca, au, walmart. Walmart takes a numeric item ID and returns "
             "the intelligence blocks only (no live scrape). "
-            "COST free lane 1 of 30 daily queries, cache only. Keyed: 0.5 credits from cache, 1 for "
+            "COST free lane 1 of 30 daily queries, cache only, and returns the snapshot + 30-day "
+            "views (the full history streams, bsr_history, offer_history and live scrapes need a "
+            "free API key — the response's locked block lists exactly what a key unlocks). Keyed: "
+            "0.5 credits from cache, 1 for "
             "a live scrape, +0.5 for the intelligence blocks, +0.5 each for bsr_history and "
             "offer_history. Misses and partial scrapes are never billed; a miss may return a hint "
             "(found on another marketplace, or retry with mode=live)."
@@ -87,8 +90,8 @@ TOOLS = [
                     "default": False,
                     "description": (
                         "Attach the buy-box owner timeline and per-seller daily price series (US "
-                        "buy-box depth back to Dec 2024). Amazon marketplaces only. +0.5 credits "
-                        "when data is returned."
+                        "buy-box depth back to Dec 2024). Amazon marketplaces only, API key "
+                        "required (free key works). +0.5 credits when data is returned."
                     ),
                 },
                 "bsr_history": {
@@ -97,7 +100,8 @@ TOOLS = [
                     "description": (
                         "Attach the full per-category BSR rank history (era-tagged daily points "
                         "back to Oct 2023 for US; legacy top-100 segments are flagged censored). "
-                        "Amazon marketplaces only. +0.5 credits when data is returned."
+                        "Amazon marketplaces only, API key required (free key works). +0.5 credits "
+                        "when data is returned."
                     ),
                 },
             },
