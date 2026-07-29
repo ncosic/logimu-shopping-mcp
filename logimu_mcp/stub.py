@@ -23,6 +23,7 @@ SERVER_INFO = {
 # Tool catalog. CANONICAL and shared with the hosted server — the two MUST stay
 # byte-identical: this stub is what MCP directories build and score, while real
 # clients connect to the hosted endpoint and get the same catalog.
+# NEVER hand-edit this block: edit tools/canonical_tools.py and re-run tools/gen.py.
 TOOLS = [
     {
         "name": "product",
