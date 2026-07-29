@@ -16,7 +16,7 @@ HOSTED = "https://api.logimu.com/mcp"
 SERVER_INFO = {
     "name": "Logimu",
     "title": "Logimu — Amazon & Walmart Shopping Data",
-    "version": "1.2.0",
+    "version": "1.1.0",
     "websiteUrl": "https://api.logimu.com",
 }
 
