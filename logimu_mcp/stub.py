@@ -79,7 +79,10 @@ TOOLS = [
                     "description": (
                         "cache = stored observation only; live = force an on-demand scrape "
                         "(Amazon only, takes a few seconds); auto = serve cache when fresher "
-                        "than max_age_days, otherwise scrape. The free lane is always cache."
+                        "than max_age_days, otherwise scrape. The no-signup free lane is "
+                        "cache-only: mode=live returns an error asking for a free API key (do "
+                        "not offer a live scrape to a keyless caller); with a key, live/auto "
+                        "scrape normally."
                     ),
                 },
                 "max_age_days": {
