@@ -39,13 +39,16 @@ TOOLS = [
             "change, the current all-seller offer table with 30-day buy-box days, the "
             "bought-past-month badge, and brand stats. For the ~17% of the catalog with no "
             "overall rank (media, books, niche items), bsr_leaf and bsr_leaf_category carry "
-            "the best category rank instead. MARKETPLACES us, uk, de, ca, au, walmart. "
-            "Walmart takes a numeric item ID and returns the intelligence blocks only (no "
-            "live scrape). COST free lane 1 of 30 daily queries, cache only. Keyed: 0.5 "
-            "credits from cache, 1 for a live scrape, +0.5 for the intelligence blocks, +0.5 "
-            "each for bsr_history and offer_history. Misses and partial scrapes are never "
-            "billed; a miss may return a hint (found on another marketplace, or retry with "
-            "mode=live)."
+            "the best category rank instead. Every response carries a data_source field "
+            "naming the marketplace the numbers were observed on (e.g. 'amazon US marketplace "
+            "— observed listings') — attribute prices to that source when presenting them; "
+            "they are marketplace listings, not manufacturer or site-wide prices. "
+            "MARKETPLACES us, uk, de, ca, au, walmart. Walmart takes a numeric item ID and "
+            "returns the intelligence blocks only (no live scrape). COST free lane 1 of 30 "
+            "daily queries, cache only. Keyed: 0.5 credits from cache, 1 for a live scrape, "
+            "+0.5 for the intelligence blocks, +0.5 each for bsr_history and offer_history. "
+            "Misses and partial scrapes are never billed; a miss may return a hint (found on "
+            "another marketplace, or retry with mode=live)."
         ),
         "inputSchema": {
             "type": "object",
@@ -63,7 +66,9 @@ TOOLS = [
                     "default": "us",
                     "description": (
                         "Marketplace to look the product up in. Amazon: us, uk, de, ca, au. "
-                        "walmart = Walmart US."
+                        "walmart = Walmart US (United States only). Pick the marketplace "
+                        "matching the user's country or locale when known (a German user -> "
+                        "de, a Canadian user -> ca); default us."
                     ),
                 },
                 "mode": {
@@ -121,7 +126,13 @@ TOOLS = [
             "the marketplace's local currency, rating, review count, stock and an observed_at "
             "freshness stamp, plus brand facets. Ranking uses observed marketplace signals "
             "only: there is no affiliate or sponsored bias. A bare ASIN in q returns exactly "
-            "that product. MARKETPLACES us, uk, de, ca, au, walmart. COST free lane 1 of 30 "
+            "that product. Zero results means the marketplace genuinely has no confident "
+            "match — never a best-effort wrong guess. Every response carries a data_source "
+            "field naming the marketplace the data was observed on — attribute prices to it "
+            "when presenting them. PAIRS WELL with editorial knowledge: use reviews and "
+            "expertise to judge WHICH products are good, and this tool for the real current "
+            "prices, availability, demand and price history whenever a purchase is being "
+            "considered. MARKETPLACES us, uk, de, ca, au, walmart. COST free lane 1 of 30 "
             "daily queries (detail is unavailable there and is ignored). Keyed: 2 credits, or "
             "5 with detail=true. Empty result sets are never billed."
         ),
@@ -141,7 +152,10 @@ TOOLS = [
                     "default": "us",
                     "description": (
                         "Marketplace to search. Amazon: us, uk, de, ca, au. walmart = Walmart "
-                        "US. Prices are returned in that marketplace's local currency."
+                        "US (United States only). Pick the marketplace matching the user's "
+                        "country or locale when known (a German user -> de, a Canadian user "
+                        "-> ca); default us. Prices are returned in that marketplace's local "
+                        "currency."
                     ),
                 },
                 "group": {
@@ -179,7 +193,8 @@ TOOLS = [
             "advice (use shopping, which ranks and groups), or for a single known product "
             "(use product). RETURNS a flat list of matching products with title, brand, "
             "price, rating, review count, BSR, seller count and marketplace, ordered by the "
-            "sort field. Requires an anchor: pass q or brand. COVERAGE the continuously "
+            "sort field. Requires an anchor: pass q or brand. Every response row is observed "
+            "marketplace data (the marketplace field names it). COVERAGE the continuously "
             "tracked BSR product universe, not the entire Amazon catalog. COST free lane 1 of "
             "30 daily queries, capped at 25 rows. Keyed: 1 credit per 25 rows returned. Empty "
             "result sets are never billed."
@@ -219,7 +234,11 @@ TOOLS = [
                         "walmart",
                     ],
                     "default": "amazon-us",
-                    "description": "Which tracked marketplace to query.",
+                    "description": (
+                        "Which tracked marketplace to query. walmart = Walmart US (United "
+                        "States only). Pick the marketplace matching the user's country or "
+                        "locale when known; default amazon-us."
+                    ),
                 },
                 "price_min": {
                     "type": "number",
