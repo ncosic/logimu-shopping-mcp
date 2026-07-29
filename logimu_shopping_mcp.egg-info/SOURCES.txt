@@ -1,0 +1,9 @@
+LICENSE
+README.md
+pyproject.toml
+logimu_mcp/stub.py
+logimu_shopping_mcp.egg-info/PKG-INFO
+logimu_shopping_mcp.egg-info/SOURCES.txt
+logimu_shopping_mcp.egg-info/dependency_links.txt
+logimu_shopping_mcp.egg-info/entry_points.txt
+logimu_shopping_mcp.egg-info/top_level.txt
