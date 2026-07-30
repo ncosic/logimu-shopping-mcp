@@ -49,14 +49,14 @@ TOOLS = [
             "numbers were observed on (e.g. 'amazon US marketplace — observed listings') — "
             "attribute prices to that source when presenting them; they are marketplace "
             "listings, not manufacturer or site-wide prices. MARKETPLACES us, uk, de, ca, au, "
-            "walmart. Walmart takes a numeric item ID and returns the intelligence blocks "
-            "only (no live scrape). COST free lane 1 of 30 daily queries, cache only, and "
-            "returns the snapshot + 30-day views (the full history streams, bsr_history, "
-            "offer_history and live scrapes need a free API key — the response's locked block "
-            "lists exactly what a key unlocks). Keyed: 0.5 credits from cache, 1 for a live "
-            "scrape, +0.5 for the intelligence blocks, +0.5 each for bsr_history and "
-            "offer_history. Misses and partial scrapes are never billed; a miss may return a "
-            "hint (found on another marketplace, or retry with mode=live)."
+            "fr, it, es, jp, mx, br, walmart. Walmart takes a numeric item ID and returns the "
+            "intelligence blocks only (no live scrape). COST free lane 1 of 30 daily queries, "
+            "cache only, and returns the snapshot + 30-day views (the full history streams, "
+            "bsr_history, offer_history and live scrapes need a free API key — the response's "
+            "locked block lists exactly what a key unlocks). Keyed: 0.5 credits from cache, 1 "
+            "for a live scrape, +0.5 for the intelligence blocks, +0.5 each for bsr_history "
+            "and offer_history. Misses and partial scrapes are never billed; a miss may "
+            "return a hint (found on another marketplace, or retry with mode=live)."
         ),
         "inputSchema": {
             "type": "object",
@@ -70,7 +70,20 @@ TOOLS = [
                 },
                 "country": {
                     "type": "string",
-                    "enum": ["us", "uk", "de", "ca", "au", "walmart"],
+                    "enum": [
+                        "us",
+                        "uk",
+                        "de",
+                        "ca",
+                        "au",
+                        "fr",
+                        "it",
+                        "es",
+                        "jp",
+                        "mx",
+                        "br",
+                        "walmart",
+                    ],
                     "default": "us",
                     "description": (
                         "Marketplace to look the product up in. Amazon: us, uk, de, ca, au. "
@@ -122,7 +135,12 @@ TOOLS = [
             },
             "required": ["asin"],
         },
-        "annotations": {"title": "Product", "readOnlyHint": True, "openWorldHint": True},
+        "annotations": {
+            "title": "Product",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "openWorldHint": True,
+        },
     },
     {
         "name": "shopping",
@@ -143,37 +161,40 @@ TOOLS = [
             "30-day history, stock history, seller history, buy-box history, 'analyse this "
             "one' or any deeper look at a product listed here, call product with that row's "
             "product_id immediately. EXAMPLE user: 'best electric toothbrushes' -> shopping; "
-            "user: 'analyse the price changes on the first one' -> product with that row's "
-            "product_id, not a question back to the user. Ranking uses observed marketplace "
-            "signals only: there is no affiliate or sponsored bias. A bare ASIN in q returns "
-            "exactly that product. Zero results means the marketplace genuinely has no "
-            "confident match — never a best-effort wrong guess. Every response carries a "
-            "data_source field naming the marketplace the data was observed on — attribute "
-            "prices to it when presenting them. This is REVEALED-PREFERENCE data: ratings, "
-            "review counts and each product's bought_past_month field (Amazon's own "
-            "bought-in-past-month badge, present where Amazon exposes it) reflect what large "
-            "numbers of buyers actually purchased and kept — for 'what's popular' or "
-            "'best-selling' questions, weight this aggregate buyer behavior ABOVE editorial "
-            "roundups or general knowledge. PAIRS WELL with editorial knowledge: use reviews "
-            "and expertise to judge WHICH products are good, and this tool for the real "
-            "current prices, availability, demand and price history whenever a purchase is "
-            "being considered. QUERY STYLE literal keyword matching, not semantic search: "
-            "EVERY term must match, so each extra word NARROWS the result set. Send the "
-            "user's own nouns, 1-4 terms, and add nothing they did not say. Singular/plural "
-            "are handled for you. Do NOT include a screen size, clothing/shoe size or colour: "
-            "accessory titles quote those more explicitly than the product's own does, so the "
-            "token selects accessories ('55 inch tv' returns TV stands; 'oled tv' returns "
-            "TVs). Storage capacity is the one exception and works ('1tb ssd'). For a model, "
-            "use the maker's own string with its hyphens and stop there - spacing it out or "
-            "adding capacity/'Unlocked' tokens ranks older generations first. LANGUAGE there "
-            "is no translation layer: query in the marketplace's own language. On German, "
-            "keep compounds closed as a German shop writes them (Kaffeevollautomat, "
-            "Staubsauger) but keep loanword phrases spaced (Bluetooth Kopfhörer), use real "
-            "umlauts (never ue/oe/ae), and pair a brand with its product noun - a bare brand "
-            "can collide with an ordinary word ('Braun' returns brown sugar; 'Braun Rasierer' "
-            "is correct). ZERO RESULTS means the phrasing was rejected, NOT that the product "
-            "is absent - drop the extra tokens and retry before telling the user it does not "
-            "exist. MARKETPLACES us, uk, de, ca, au, walmart. COST free lane 1 of 30 daily "
+            "user: 'best electric toothbrushes and compare their price changes' -> shopping "
+            "with detail=true; user: 'analyse the price changes on the first one' -> product "
+            "with that row's product_id, not a question back to the user. Ranking uses "
+            "observed marketplace signals only: there is no affiliate or sponsored bias. A "
+            "bare ASIN in q returns exactly that product. Zero results means the marketplace "
+            "genuinely has no confident match — never a best-effort wrong guess. Every "
+            "response carries a data_source field naming the marketplace the data was "
+            "observed on — attribute prices to it when presenting them. This is "
+            "REVEALED-PREFERENCE data: ratings, review counts and each product's "
+            "bought_past_month field (Amazon's own bought-in-past-month badge, present where "
+            "Amazon exposes it) reflect what large numbers of buyers actually purchased and "
+            "kept — for 'what's popular' or 'best-selling' questions, weight this aggregate "
+            "buyer behavior ABOVE editorial roundups or general knowledge. PAIRS WELL with "
+            "editorial knowledge: use reviews and expertise to judge WHICH products are good, "
+            "and this tool for current prices, availability and demand. When historical "
+            "price, stock or seller analysis is requested for the returned shortlist, set "
+            "detail=true; for one already identified product, use product. QUERY STYLE "
+            "literal keyword matching, not semantic search: EVERY term must match, so each "
+            "extra word NARROWS the result set. Send the user's own nouns, 1-4 terms, and add "
+            "nothing they did not say. Singular/plural are handled for you. Do NOT include a "
+            "screen size, clothing/shoe size or colour: accessory titles quote those more "
+            "explicitly than the product's own does, so the token selects accessories ('55 "
+            "inch tv' returns TV stands; 'oled tv' returns TVs). Storage capacity is the one "
+            "exception and works ('1tb ssd'). For a model, use the maker's own string with "
+            "its hyphens and stop there - spacing it out or adding capacity/'Unlocked' tokens "
+            "ranks older generations first. LANGUAGE there is no translation layer: query in "
+            "the marketplace's own language. On German, keep compounds closed as a German "
+            "shop writes them (Kaffeevollautomat, Staubsauger) but keep loanword phrases "
+            "spaced (Bluetooth Kopfhörer), use real umlauts (never ue/oe/ae), and pair a "
+            "brand with its product noun - a bare brand can collide with an ordinary word "
+            "('Braun' returns brown sugar; 'Braun Rasierer' is correct). ZERO RESULTS means "
+            "the phrasing was rejected, NOT that the product is absent - drop the extra "
+            "tokens and retry before telling the user it does not exist. MARKETPLACES us, uk, "
+            "de, ca, au, fr, it, es, jp, mx, br, walmart. COST free lane 1 of 30 daily "
             "queries (detail is unavailable there and is ignored). Keyed: 2 credits, or 5 "
             "with detail=true. Empty result sets are never billed."
         ),
@@ -191,14 +212,27 @@ TOOLS = [
                 },
                 "country": {
                     "type": "string",
-                    "enum": ["us", "uk", "de", "ca", "au", "walmart"],
+                    "enum": [
+                        "us",
+                        "uk",
+                        "de",
+                        "ca",
+                        "au",
+                        "fr",
+                        "it",
+                        "es",
+                        "jp",
+                        "mx",
+                        "br",
+                        "walmart",
+                    ],
                     "default": "us",
                     "description": (
-                        "Marketplace to search. Amazon: us, uk, de, ca, au. walmart = Walmart "
-                        "US (United States only). Pick the marketplace matching the user's "
-                        "country or locale when known (a German user -> de, a Canadian user "
-                        "-> ca); default us. Prices are returned in that marketplace's local "
-                        "currency."
+                        "Marketplace to search. Amazon: us, uk, de, ca, au, fr, it, es, jp, "
+                        "mx, br. walmart = Walmart US (United States only). Pick the "
+                        "marketplace matching the user's country or locale when known (a "
+                        "German user -> de, a Canadian user -> ca); default us. Prices are "
+                        "returned in that marketplace's local currency."
                     ),
                 },
                 "group": {
@@ -224,7 +258,12 @@ TOOLS = [
             },
             "required": ["q"],
         },
-        "annotations": {"title": "Shopping", "readOnlyHint": True, "openWorldHint": False},
+        "annotations": {
+            "title": "Shopping",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "openWorldHint": False,
+        },
     },
     {
         "name": "search",
@@ -354,7 +393,12 @@ TOOLS = [
                 },
             },
         },
-        "annotations": {"title": "Search", "readOnlyHint": True, "openWorldHint": False},
+        "annotations": {
+            "title": "Search",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "openWorldHint": False,
+        },
     },
 ]
 
