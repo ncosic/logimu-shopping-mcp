@@ -150,6 +150,14 @@ TOOLS = [
             "PAIRS WELL with editorial knowledge: use reviews and expertise to judge WHICH products "
             "are good, and this tool for the real current prices, availability, demand and price "
             "history whenever a purchase is being considered. "
+            "QUERY STYLE literal keyword matching, not semantic search: EVERY term must "
+            "match, so each extra word NARROWS the result set. Pass the user's own nouns, "
+            "1-4 terms, and do NOT add inferred qualifiers - 'electric toothbrush for "
+            "adults' on amazon.de returns 17 matches with an RC car ranked first, while "
+            "'elektrische zahnbuerste' returns 678 clean ones. Singular/plural are handled "
+            "for you. There is NO translation layer: query in the marketplace's own "
+            "language (de -> German, us/uk -> English) - the English word on a German "
+            "marketplace finds a fraction of the catalog. "
             "MARKETPLACES us, uk, de, ca, au, walmart. "
             "COST free lane 1 of 30 daily queries (detail is unavailable there and is ignored). "
             "Keyed: 2 credits, or 5 with detail=true. Empty result sets are never billed."
@@ -159,7 +167,12 @@ TOOLS = [
             "properties": {
                 "q": {
                     "type": "string",
-                    "description": "What to search for, e.g. 'coffee maker'. A bare ASIN returns exactly that product.",
+                    "description": (
+                        "What to search for, e.g. 'coffee maker'. Literal keywords, not "
+                        "semantic: every term must match, so extra or inferred words only "
+                        "narrow the result set. Query in the marketplace's own language - "
+                        "there is no translation. A bare ASIN returns exactly that product."
+                    ),
                 },
                 "country": {
                     "type": "string",
@@ -221,7 +234,12 @@ TOOLS = [
             "properties": {
                 "q": {
                     "type": "string",
-                    "description": "Keyword matched against the product title. Acts as the anchor when brand is not given.",
+                    "description": (
+                        "Keyword matched against the product title. Acts as the anchor when "
+                        "brand is not given. Literal keywords, not semantic: every term must "
+                        "match, so extra or inferred words only narrow the result set. Query "
+                        "in the marketplace's own language — there is no translation."
+                    ),
                 },
                 "brand": {
                     "type": "string",
