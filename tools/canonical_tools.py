@@ -272,7 +272,7 @@ TOOLS = [
                 },
                 "marketplace": {
                     "type": "string",
-                    "enum": ["amazon-us", "amazon-uk", "amazon-de", "amazon-ca", "amazon-au", "walmart"],
+                    "enum": ["amazon-us", "amazon-uk", "amazon-de", "amazon-ca", "amazon-au", "amazon-fr", "amazon-it", "amazon-es", "amazon-jp", "amazon-mx", "amazon-br", "walmart"],
                     "default": "amazon-us",
                     "description": (
                         "Which tracked marketplace to query. walmart = Walmart US (United States "
