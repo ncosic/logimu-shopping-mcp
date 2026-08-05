@@ -86,10 +86,10 @@ TOOLS = [
                     ],
                     "default": "us",
                     "description": (
-                        "Marketplace to look the product up in. Amazon: us, uk, de, ca, au. "
-                        "walmart = Walmart US (United States only). Pick the marketplace "
-                        "matching the user's country or locale when known (a German user -> "
-                        "de, a Canadian user -> ca); default us."
+                        "Marketplace to look the product up in. Amazon: us, uk, de, ca, au, "
+                        "fr, it, es, jp, mx, br. walmart = Walmart US (United States only). "
+                        "Pick the marketplace matching the user's country or locale when "
+                        "known (a German user -> de, a Canadian user -> ca); default us."
                     ),
                 },
                 "mode": {
@@ -308,12 +308,19 @@ TOOLS = [
                 "seller": {
                     "type": "string",
                     "description": (
-                        "Restrict to products this seller has been observed offering."
+                        "Restrict to products this seller has been observed offering. "
+                        "REFINEMENT ONLY - cannot be used on its own; pair it with q or "
+                        "brand, which are the only anchors."
                     ),
                 },
                 "category": {
                     "type": "string",
-                    "description": "Restrict to a single product category.",
+                    "description": (
+                        "Restrict to a single product category. REFINEMENT ONLY - cannot be "
+                        "used on its own; pair it with q or brand, which are the only "
+                        "anchors. To browse a category with no keyword, use the shopping tool "
+                        "instead."
+                    ),
                 },
                 "marketplace": {
                     "type": "string",

@@ -30,7 +30,7 @@ Then ask things like:
 |---|---|---|---|
 | `shopping` | "best X", "find me Y under $Z" — you want a shortlist | Ranked, grouped products (category or Budget/Mid/Premium tiers) with real ratings, prices, stock, `observed_at` stamps + brand facets, in ~100ms | 1 of 30 daily |
 | `product` | You have a specific ASIN/item — "good buy?", "price history?", "who sells this?" | Current snapshot + intelligence blocks: 30-day price/stock change events, all-seller offer table, brand stats | 1 of 30 daily |
-| `search` | Filtered structured lists — price/rating/review/BSR/FBA filters, sorting | Up to 25 rows on the free lane from 17M+ tracked products across all six marketplaces | 1 of 30 daily |
+| `search` | Filtered structured lists — price/rating/review/BSR/FBA filters, sorting | Up to 25 rows on the free lane from 17M+ tracked products across all 11 Amazon marketplaces plus Walmart US | 1 of 30 daily |
 
 Full REST API reference (same engine, same data): [api.logimu.com/docs](https://api.logimu.com/docs)
 
