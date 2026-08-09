@@ -43,8 +43,13 @@ TOOLS = [
             "carries the 30-day views), change events tagged with the buy-box seller at each "
             "change, the current all-seller offer table with 30-day buy-box days, the "
             "bought-past-month badge (measured aggregate buyer behavior, not an estimate), "
-            "and brand stats. For the ~17% of the catalog with no overall rank (media, books, "
-            "niche items), bsr_leaf and bsr_leaf_category carry the best category rank "
+            "and brand stats. Amazon answers also carry the observed product-page content "
+            "block: description (with description_source), feature_bullets, images, "
+            "breadcrumbs, variations with variation_count and parent_asin, stamped "
+            "content_observed_at — content_observed_at:null with empty arrays means the "
+            "content crawl has not captured this ASIN yet, never 'this product has no "
+            "description/gallery'. For the ~17% of the catalog with no overall rank (media, "
+            "books, niche items), bsr_leaf and bsr_leaf_category carry the best category rank "
             "instead. Every response carries a data_source field naming the marketplace the "
             "numbers were observed on (e.g. 'amazon US marketplace — observed listings') — "
             "attribute prices to that source when presenting them; they are marketplace "
@@ -65,7 +70,19 @@ TOOLS = [
                     "type": "string",
                     "description": (
                         "10-character Amazon ASIN, or a numeric Walmart item ID when "
-                        "country=walmart."
+                        "country=walmart. Provide either asin or gtin."
+                    ),
+                },
+                "gtin": {
+                    "type": "string",
+                    "description": (
+                        "GTIN / UPC / EAN barcode (12, 13 or 14 digits; punctuation and "
+                        "leading zeros are tolerated), resolved to an ASIN in the requested "
+                        "marketplace. USE WHEN the user gives a barcode instead of an ASIN — "
+                        "scanned off a package, from a supplier sheet, or copied from a "
+                        "listing. A barcode can legitimately map to several ASINs; the best "
+                        "match is returned and the rest are listed in gtin_matches. Never "
+                        "billed when the barcode is unknown to us."
                     ),
                 },
                 "country": {
@@ -250,6 +267,52 @@ TOOLS = [
                         "into Budget/Mid-range/Premium; none = one flat ranked list."
                     ),
                 },
+                "min_price": {
+                    "type": "number",
+                    "minimum": 0,
+                    "description": (
+                        "Minimum price, in the marketplace's local currency. USE WHEN the "
+                        "user sets a floor ('at least £50', 'nothing cheap')."
+                    ),
+                },
+                "max_price": {
+                    "type": "number",
+                    "minimum": 0,
+                    "description": (
+                        "Maximum price, in the marketplace's local currency. USE WHEN the "
+                        "user gives a budget or says cheap/affordable/under X — pass the "
+                        "number here rather than putting the word in q, where it is matched "
+                        "as a literal word in the product title and throws away real results."
+                    ),
+                },
+                "brand": {
+                    "type": "string",
+                    "description": (
+                        "Restrict to one exact brand. USE WHEN the user names a brand they "
+                        "want ('Anker charger'); prefer this over putting the brand in q."
+                    ),
+                },
+                "in_stock": {
+                    "type": "boolean",
+                    "description": "Only products currently in stock.",
+                },
+                "sort": {
+                    "type": "string",
+                    "enum": ["relevance", "price", "rating"],
+                    "default": "relevance",
+                    "description": (
+                        "relevance (default) | price (cheapest first) | rating. USE price "
+                        "when the user asks for the cheapest, rating when they ask for the "
+                        "best-reviewed."
+                    ),
+                },
+                "limit": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 50,
+                    "default": 20,
+                    "description": "Max products to return (default 20).",
+                },
                 "detail": {
                     "type": "boolean",
                     "default": False,
@@ -353,6 +416,37 @@ TOOLS = [
                     "type": "number",
                     "description": "Maximum current price, in the marketplace's local currency.",
                 },
+                "rating_max": {
+                    "type": "number",
+                    "description": (
+                        "Maximum average star rating. USE WHEN looking for products whose "
+                        "reviews are weak — an incumbent rated 3.2 is an opening."
+                    ),
+                },
+                "seller_count_min": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": (
+                        "Minimum number of sellers competing on the listing. USE WHEN the "
+                        "user wants proven demand rather than an untested listing."
+                    ),
+                },
+                "seller_count_max": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": (
+                        "Maximum number of sellers competing on the listing. USE WHEN the "
+                        "user asks for products with little competition, few sellers, or an "
+                        "easy listing to win — this is the core sourcing filter."
+                    ),
+                },
+                "fbm": {
+                    "type": "boolean",
+                    "description": (
+                        "Only merchant-fulfilled listings. The counterpart of fba, which was "
+                        "already exposed."
+                    ),
+                },
                 "rating_min": {
                     "type": "number",
                     "description": "Minimum star rating, on a 0-5 scale.",
@@ -410,12 +504,121 @@ TOOLS = [
                     ),
                 },
             },
+            "anyOf": [
+                {
+                    "required": ["q"],
+                },
+                {
+                    "required": ["brand"],
+                },
+            ],
         },
         "annotations": {
             "title": "Search",
             "readOnlyHint": True,
             "destructiveHint": False,
             "openWorldHint": False,
+        },
+    },
+    {
+        "name": "serp",
+        "description": (
+            "LIVE Amazon search-results (SERP) fetch: a real browser navigates Amazon's "
+            "search page RIGHT NOW and returns the parsed organic result grid plus everything "
+            "around it. USE WHEN the user wants what Amazon's search page shows THIS MINUTE "
+            "for a query — current ranking order, who is on page 1, sponsored/ad placements, "
+            "related searches, refinement filters — or when the curated tools found nothing "
+            "and the user wants Amazon itself checked. DON'T USE for ordinary product "
+            "discovery (shopping is <100ms and curated), for filtered datasets (search), or "
+            "for one known ASIN (product). RETURNS search_results (position, asin, title, "
+            "link, image, rating, ratings_total, price, list_price, recent_sales badge, "
+            "sponsored, is_prime), search_information (Amazon's OWN result-count estimate — "
+            "'over 20,000' is an estimate, not a count), pagination, related_searches, "
+            "refinements (round-trip: pass a refinements[*].value back in), ad_blocks / "
+            "video_blocks (sponsored placements; their links are Amazon ad-redirectors, NOT "
+            "clean product URLs) and brand_stores (organic store headers only — legitimately "
+            "empty on sponsored-heavy pages). HONESTY: results per page is Amazon's choice "
+            "(16-48, varies); `sponsored` is usually false because Amazon puts paid "
+            "placements in separate carousels; `is_prime` false means 'no icon rendered', not "
+            "'not Prime'; recent_sales is the verbatim badge string in the page's own "
+            "language; spelling_correction reports Amazon's autocorrect, it cannot disable "
+            "it. LATENCY is SECONDS — typically ~8-13s, up to ~90s when the retry ladder "
+            "runs; tell the user it is a live fetch. Every call is live: there is no cached "
+            "SERP and no mode parameter. MARKETPLACES us, uk, de, ca, au, fr, it, es, jp, mx, "
+            "br (no Walmart). COST API key required (the free no-signup lane cannot run live "
+            "fetches). 1 credit per page ACTUALLY fetched — max_page=3 can stop at 2 when "
+            "Amazon runs out; blocked fetches (502) and empty result sets are never billed."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "q": {
+                    "type": "string",
+                    "description": (
+                        "The search query, exactly as a shopper would type it into Amazon's "
+                        "search box. Query in the marketplace's own language."
+                    ),
+                },
+                "country": {
+                    "type": "string",
+                    "enum": ["us", "uk", "de", "ca", "au", "fr", "it", "es", "jp", "mx", "br"],
+                    "default": "us",
+                    "description": (
+                        "Amazon marketplace to search. No Walmart — live SERP is Amazon-only."
+                    ),
+                },
+                "page": {"type": "integer", "default": 1, "description": "Start page (1-10)."},
+                "max_page": {
+                    "type": "integer",
+                    "description": (
+                        "Auto-paginate page..max_page and concatenate (positions stay "
+                        "continuous across pages). Max 10 pages per request; billed per page "
+                        "actually fetched."
+                    ),
+                },
+                "sort_by": {
+                    "type": "string",
+                    "enum": [
+                        "featured",
+                        "price_low_to_high",
+                        "price_high_to_low",
+                        "average_review",
+                        "most_recent",
+                        "bestseller_rankings",
+                    ],
+                    "description": "Amazon's own sort orders; default is Amazon's Featured.",
+                },
+                "category_id": {
+                    "type": "string",
+                    "description": "Amazon browse-node id to scope the search (becomes &node=).",
+                },
+                "refinements": {
+                    "type": "string",
+                    "description": (
+                        "Amazon rh= refinement value. Round-trips: feed back any "
+                        "refinements[*].value from a previous serp response."
+                    ),
+                },
+                "exclude_sponsored": {
+                    "type": "boolean",
+                    "default": False,
+                    "description": (
+                        "Drop inline sponsored results. Often a no-op — Amazon usually keeps "
+                        "paid placements in separate carousels outside the organic grid."
+                    ),
+                },
+                "number_of_results": {
+                    "type": "integer",
+                    "description": "Truncate the returned result list.",
+                },
+            },
+            "required": ["q"],
+        },
+        "annotations": {
+            "title": "Live Amazon Search (SERP)",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "openWorldHint": True,
         },
     },
 ]
