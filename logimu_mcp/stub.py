@@ -41,27 +41,36 @@ TOOLS = [
             "buy-box seller and seller count, plus an observed_at freshness stamp, full "
             "price_history and stock_history back to first observation (keyed; the free lane "
             "carries the 30-day views), change events tagged with the buy-box seller at each "
-            "change, the current all-seller offer table with 30-day buy-box days, the "
-            "bought-past-month badge (measured aggregate buyer behavior, not an estimate), "
-            "and brand stats. Amazon answers also carry the observed product-page content "
-            "block: description (with description_source), feature_bullets, images, "
-            "breadcrumbs, variations with variation_count and parent_asin, stamped "
-            "content_observed_at — content_observed_at:null with empty arrays means the "
-            "content crawl has not captured this ASIN yet, never 'this product has no "
-            "description/gallery'. For the ~17% of the catalog with no overall rank (media, "
-            "books, niche items), bsr_leaf and bsr_leaf_category carry the best category rank "
-            "instead. Every response carries a data_source field naming the marketplace the "
-            "numbers were observed on (e.g. 'amazon US marketplace — observed listings') — "
-            "attribute prices to that source when presenting them; they are marketplace "
-            "listings, not manufacturer or site-wide prices. MARKETPLACES us, uk, de, ca, au, "
-            "fr, it, es, jp, mx, br, walmart. Walmart takes a numeric item ID and returns the "
-            "intelligence blocks only (no live scrape). COST free lane 1 of 30 daily queries, "
-            "cache only, and returns the snapshot + 30-day views (the full history streams, "
-            "bsr_history, offer_history and live scrapes need a free API key — the response's "
-            "locked block lists exactly what a key unlocks). Keyed: 0.5 credits from cache, 1 "
-            "for a live scrape, +0.5 for the intelligence blocks, +0.5 each for bsr_history "
-            "and offer_history. Misses and partial scrapes are never billed; a miss may "
-            "return a hint (found on another marketplace, or retry with mode=live)."
+            "change, the current all-seller offer table with 30-day buy-box days (each seller "
+            "row carries fulfillment AMZ/FBA/FBM and delivery days), a fulfillment block "
+            "(buy-box AMZ/FBA/FBM, offer counts, whether Amazon sells and holds the buy box, "
+            "buy-box delivery days and dispatch latency), the bought-past-month badge "
+            "(measured aggregate buyer behavior, not an estimate), and brand stats. Amazon "
+            "answers also carry the observed product-page content block: description (with "
+            "description_source), feature_bullets, images, breadcrumbs, variations with "
+            "variation_count and parent_asin, stamped content_observed_at — "
+            "content_observed_at:null with empty arrays means the content crawl has not "
+            "captured this ASIN yet, never 'this product has no description/gallery'. For the "
+            "~17% of the catalog with no overall rank (media, books, niche items), bsr_leaf "
+            "and bsr_leaf_category carry the best category rank instead. Every response "
+            "carries a data_source field naming the marketplace the numbers were observed on "
+            "(e.g. 'amazon US marketplace — observed listings') — attribute prices to that "
+            "source when presenting them; they are marketplace listings, not manufacturer or "
+            "site-wide prices. MARKETPLACES us, uk, de, ca, au, fr, it, es, jp, mx, br, "
+            "walmart. Walmart takes a numeric item ID and returns the intelligence blocks "
+            "only (no live scrape). COST free lane 1 of 30 daily queries, cache only, and "
+            "returns the snapshot + 30-day views (the full history streams, bsr_history, "
+            "offer_history and live scrapes need an API key (plans from $19/mo) — the "
+            "response's locked block lists exactly what a key unlocks). Keyed: 0.5 credits "
+            "from cache, 1 for a live scrape, +0.5 for the intelligence blocks, +0.5 each for "
+            "bsr_history and offer_history. Misses and partial scrapes are never billed; a "
+            "miss may return a hint (found on another marketplace, or retry with mode=live). "
+            "SELLER FEEDBACK (2026-09-18): every response carries seller_ratings - one entry "
+            "per seller the answer names (current offers, cheapest new/used, buy-box holder "
+            "and, with offer_history, every historical seller) with seller_positive_pct, "
+            "seller_feedback_count, seller_rating and observed_at from a nightly "
+            "seller-feedback table; offer_history.sellers[] rows carry the same fields "
+            "directly. Amazon's own offers have no feedback. Not billed."
         ),
         "inputSchema": {
             "type": "object",
@@ -117,9 +126,9 @@ TOOLS = [
                         "cache = stored observation only; live = force an on-demand scrape "
                         "(Amazon only, takes a few seconds); auto = serve cache when fresher "
                         "than max_age_days, otherwise scrape. The no-signup free lane is "
-                        "cache-only: mode=live returns an error asking for a free API key (do "
-                        "not offer a live scrape to a keyless caller); with a key, live/auto "
-                        "scrape normally."
+                        "cache-only: mode=live returns an error asking for an API key (from "
+                        "$19/mo) (do not offer a live scrape to a keyless caller); with a "
+                        "key, live/auto scrape normally."
                     ),
                 },
                 "max_age_days": {
@@ -130,6 +139,23 @@ TOOLS = [
                         "scrape."
                     ),
                 },
+                "include_used": {
+                    "type": "boolean",
+                    "default": False,
+                    "description": (
+                        "Include used, refurbished, open-box and collectible offers in "
+                        "current_sellers (default false keeps the new-condition list). Every "
+                        "seller row always carries condition (the marketplace's own label) "
+                        "and condition_class (new, used_like_new, used_very_good, used_good, "
+                        "used_acceptable, used, refurbished, open_box, collectible, unknown); "
+                        "current_sellers always carries used_offer_count, lowest_new (the "
+                        "cheapest new offer - the list is buy-box first, not price-sorted) "
+                        "and lowest_used (the cheapest second-hand offer) even without opting "
+                        "in. With offer_history it returns one series per "
+                        "seller+condition_class. Cached, live and historical data alike; not "
+                        "billed extra."
+                    ),
+                },
                 "offer_history": {
                     "type": "boolean",
                     "default": False,
@@ -137,6 +163,29 @@ TOOLS = [
                         "Attach the buy-box owner timeline and per-seller daily price series "
                         "(US buy-box depth back to Dec 2024). Amazon marketplaces only, API "
                         "key required (free key works). +0.5 credits when data is returned."
+                    ),
+                },
+                "history_sellers": {
+                    "type": "integer",
+                    "default": 10,
+                    "minimum": 1,
+                    "maximum": 50,
+                    "description": (
+                        "With offer_history: how many of the most-observed sellers carry a "
+                        "point series (default 10, max 50). Every observed seller is always "
+                        "listed as a summary row with points_total."
+                    ),
+                },
+                "history_points": {
+                    "type": "integer",
+                    "default": 500,
+                    "minimum": 1,
+                    "maximum": 20000,
+                    "description": (
+                        "With offer_history: points per series, the most recent N observed "
+                        "days (default 500, max 20,000). The default 10 x 500 is inside the "
+                        "+0.5; beyond it 0.5 credit per started 1,000 points "
+                        "(offer_history.extra_credits)."
                     ),
                 },
                 "bsr_history": {
@@ -156,6 +205,7 @@ TOOLS = [
             "title": "Product",
             "readOnlyHint": True,
             "destructiveHint": False,
+            "idempotentHint": True,
             "openWorldHint": True,
         },
     },
@@ -218,7 +268,9 @@ TOOLS = [
             "and retry before telling the user it does not exist. MARKETPLACES us, uk, de, "
             "ca, au, fr, it, es, jp, mx, br, walmart. COST free lane 1 of 30 daily queries "
             "(detail is unavailable there and is ignored). Keyed: 2 credits, or 5 with "
-            "detail=true. Empty result sets are never billed."
+            "detail=true. Empty result sets are never billed. With detail=true the response "
+            "also carries seller_ratings (seller feedback for every seller the detail blocks "
+            "name; 2026-09-18)."
         ),
         "inputSchema": {
             "type": "object",
@@ -330,13 +382,14 @@ TOOLS = [
             "title": "Shopping",
             "readOnlyHint": True,
             "destructiveHint": False,
+            "idempotentHint": True,
             "openWorldHint": False,
         },
     },
     {
         "name": "search",
         "description": (
-            "Filtered query over the tracked-product warehouse (17M+ Amazon and Walmart "
+            "Filtered query over the tracked-product warehouse (24M+ Amazon and Walmart "
             "products). USE WHEN the user wants a structured list matching explicit criteria: "
             "'well-rated dehumidifiers under $150 with 1000+ reviews', 'everything by brand X "
             "sorted by BSR', 'FBA products in this category'. DON'T USE for 'best X' buying "
@@ -344,13 +397,17 @@ TOOLS = [
             "(use product). RETURNS a flat list of matching products with product_id (the "
             "ASIN on Amazon, the numeric item ID on Walmart), product_url, title, brand, "
             "price, rating, review count, BSR, seller count and marketplace, ordered by the "
-            "sort field. Requires an anchor: pass q or brand. Cite product_id when the user "
-            "may want to act on a specific row, and pass it to the product tool for that "
-            "item's full history. Every response row is observed marketplace data (the "
+            "sort field. Requires an anchor: pass q, brand, or category. Cite product_id when "
+            "the user may want to act on a specific row, and pass it to the product tool for "
+            "that item's full history. Every response row is observed marketplace data (the "
             "marketplace field names it). COVERAGE the continuously tracked BSR product "
             "universe, not the entire Amazon catalog. COST free lane 1 of 30 daily queries, "
             "capped at 25 rows. Keyed: 1 credit per 25 rows returned. Empty result sets are "
-            "never billed."
+            "never billed. SELLER FEEDBACK (2026-09-18): the response also carries "
+            "seller_ratings - a separate array with seller_positive_pct, "
+            "seller_feedback_count, seller_rating and observed_at for every buy-box seller "
+            "named in the rows (Amazon marketplaces; absent on Walmart). Row shapes are "
+            "unchanged. Not billed."
         ),
         "inputSchema": {
             "type": "object",
@@ -372,17 +429,21 @@ TOOLS = [
                     "type": "string",
                     "description": (
                         "Restrict to products this seller has been observed offering. "
-                        "REFINEMENT ONLY - cannot be used on its own; pair it with q or "
-                        "brand, which are the only anchors."
+                        "REFINEMENT ONLY - cannot be used on its own; pair it with an anchor "
+                        "(q, brand, or category)."
                     ),
                 },
                 "category": {
                     "type": "string",
                     "description": (
-                        "Restrict to a single product category. REFINEMENT ONLY - cannot be "
-                        "used on its own; pair it with q or brand, which are the only "
-                        "anchors. To browse a category with no keyword, use the shopping tool "
-                        "instead."
+                        "A department or sub-category name (e.g. 'Home & Kitchen', 'Beading "
+                        "Storage'), matched in full and case-insensitively against the "
+                        "product's category chain — comma-separate several. Works BOTH ways: "
+                        "as an ANCHOR on its own to browse a category with no keyword "
+                        "('everything in Home & Kitchen under $30, most reviews first'), or "
+                        "as a REFINEMENT alongside q or brand. A category-only browse returns "
+                        "the category's top products by in-category best-seller rank, then "
+                        "applies your filters and sort."
                     ),
                 },
                 "marketplace": {
@@ -472,6 +533,16 @@ TOOLS = [
                         "merchant-fulfilled. Omit to include both."
                     ),
                 },
+                "fulfillment": {
+                    "type": "string",
+                    "enum": ["amz", "fba", "fbm"],
+                    "description": (
+                        "Buy-box fulfilment of the listing: amz = sold by Amazon itself, fba "
+                        "= a third party fulfilled by Amazon, fbm = merchant-fulfilled. Finer "
+                        "than fba/fbm because it separates Amazon Retail from FBA sellers. "
+                        "Amazon marketplaces only."
+                    ),
+                },
                 "sort": {
                     "type": "string",
                     "enum": [
@@ -511,12 +582,16 @@ TOOLS = [
                 {
                     "required": ["brand"],
                 },
+                {
+                    "required": ["category"],
+                },
             ],
         },
         "annotations": {
             "title": "Search",
             "readOnlyHint": True,
             "destructiveHint": False,
+            "idempotentHint": True,
             "openWorldHint": False,
         },
     },
@@ -618,6 +693,7 @@ TOOLS = [
             "title": "Live Amazon Search (SERP)",
             "readOnlyHint": True,
             "destructiveHint": False,
+            "idempotentHint": True,
             "openWorldHint": True,
         },
     },
