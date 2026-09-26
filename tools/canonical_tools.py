@@ -357,6 +357,17 @@ TOOLS = [
                     "type": "boolean",
                     "description": "Only products currently in stock.",
                 },
+                "include_unavailable": {
+                    "type": "boolean",
+                    "default": False,
+                    "description": (
+                        "false (default): only products with a current offer, so the shortlist "
+                        "is buyable. true: also list items that currently have NO offer on the "
+                        "marketplace (Amazon 'Currently unavailable': price null, in_stock "
+                        "false). USE WHEN the user asks about a specific discontinued or "
+                        "sold-out product; otherwise leave it off."
+                    ),
+                },
                 "sort": {
                     "type": "string",
                     "enum": ["relevance", "price", "rating"],
