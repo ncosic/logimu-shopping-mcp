@@ -12,7 +12,7 @@ Description shape is deliberate (Glama TDQS scores 6 dimensions):
 and EVERY parameter carries a description (Parameter Semantics, 15%).
 Costs below are verified against the code, not the docs:
   product : routes.compute_unified_product -> base 0 partial / 0.5 cache / 1.0 live,
-            +0.5 intelligence, +0.5 each history flag; 404 unbilled
+            +0.5 once for any history flag (2026-09-27); 404 unbilled
   shopping: mcp._dispatch -> 2 credits, 5 with detail; 0 when total == 0
   search  : mcp._dispatch -> ceil(rows/25) credits; 0 when no rows
   serp    : mcp._dispatch -> 1 credit per page ACTUALLY fetched; blocked (502)
@@ -79,9 +79,9 @@ TOOLS = [
             "live scrape on Walmart). COST free lane 1 of 30 daily queries, cache only, and "
             "returns the snapshot + 30-day views (the full history streams, bsr_history, "
             "offer_history and live scrapes need an API key (plans from $19/mo) — the "
-            "response's locked block lists exactly what a key unlocks). Keyed: 0.5 credits "
-            "from cache, 1 for a live scrape, +0.5 for the intelligence blocks, +0.5 each for "
-            "bsr_history and offer_history. Misses and partial scrapes are never billed; a "
+            "response's locked block lists exactly what a key unlocks). Keyed (2026-09-27): 0.5 "
+            "credits from cache with everything included, 1 for a live scrape, +0.5 ONCE for "
+            "history when bsr_history and/or offer_history come back (one charge for both). Misses and partial scrapes are never billed; a "
             "miss may return a hint (found on another marketplace, or retry with mode=live). "
             "SELLER FEEDBACK (2026-09-18): every response carries seller_ratings - one entry "
             "per seller the answer names (current offers, cheapest new/used, buy-box holder "
@@ -180,7 +180,7 @@ TOOLS = [
                     "description": (
                         "Attach the buy-box owner timeline and per-seller daily price series "
                         "(US buy-box depth back to Dec 2024). Amazon marketplaces only, API "
-                        "key required (free key works). +0.5 credits when data is returned."
+                        "key required (free key works). History charge +0.5 once per call, shared with offer_history."
                     ),
                 },
                 "history_sellers": {
@@ -213,7 +213,7 @@ TOOLS = [
                         "Attach the full per-category BSR rank history (era-tagged daily "
                         "points back to Oct 2023 for US; legacy top-100 segments are flagged "
                         "censored). Amazon marketplaces only, API key required (free key "
-                        "works). +0.5 credits when data is returned."
+                        "works). History charge +0.5 once per call, shared with bsr_history."
                     ),
                 },
             },
