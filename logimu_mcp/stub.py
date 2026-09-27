@@ -73,16 +73,16 @@ TOOLS = [
             "daily queries, cache only, and returns the snapshot + 30-day views (the full "
             "history streams, bsr_history, offer_history and live scrapes need an API key "
             "(plans from $19/mo) — the response's locked block lists exactly what a key "
-            "unlocks). Keyed: 0.5 credits from cache, 1 for a live scrape, +0.5 for the "
-            "intelligence blocks, +0.5 each for bsr_history and offer_history. Misses and "
-            "partial scrapes are never billed; a miss may return a hint (found on another "
-            "marketplace, or retry with mode=live). SELLER FEEDBACK (2026-09-18): every "
-            "response carries seller_ratings - one entry per seller the answer names (current "
-            "offers, cheapest new/used, buy-box holder and, with offer_history, every "
-            "historical seller) with seller_positive_pct, seller_feedback_count, "
-            "seller_rating and observed_at from a nightly seller-feedback table; "
-            "offer_history.sellers[] rows carry the same fields directly. Amazon's own offers "
-            "have no feedback. Not billed."
+            "unlocks). Keyed (2026-09-27): 0.5 credits from cache with everything included, 1 "
+            "for a live scrape, +0.5 ONCE for history when bsr_history and/or offer_history "
+            "come back (one charge for both). Misses and partial scrapes are never billed; a "
+            "miss may return a hint (found on another marketplace, or retry with mode=live). "
+            "SELLER FEEDBACK (2026-09-18): every response carries seller_ratings - one entry "
+            "per seller the answer names (current offers, cheapest new/used, buy-box holder "
+            "and, with offer_history, every historical seller) with seller_positive_pct, "
+            "seller_feedback_count, seller_rating and observed_at from a nightly "
+            "seller-feedback table; offer_history.sellers[] rows carry the same fields "
+            "directly. Amazon's own offers have no feedback. Not billed."
         ),
         "inputSchema": {
             "type": "object",
@@ -174,7 +174,8 @@ TOOLS = [
                     "description": (
                         "Attach the buy-box owner timeline and per-seller daily price series "
                         "(US buy-box depth back to Dec 2024). Amazon marketplaces only, API "
-                        "key required (free key works). +0.5 credits when data is returned."
+                        "key required (free key works). History charge +0.5 once per call, "
+                        "shared with offer_history."
                     ),
                 },
                 "history_sellers": {
@@ -207,7 +208,7 @@ TOOLS = [
                         "Attach the full per-category BSR rank history (era-tagged daily "
                         "points back to Oct 2023 for US; legacy top-100 segments are flagged "
                         "censored). Amazon marketplaces only, API key required (free key "
-                        "works). +0.5 credits when data is returned."
+                        "works). History charge +0.5 once per call, shared with bsr_history."
                     ),
                 },
             },
