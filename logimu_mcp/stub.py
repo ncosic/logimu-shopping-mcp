@@ -281,9 +281,12 @@ TOOLS = [
             "and retry before telling the user it does not exist. MARKETPLACES us, uk, de, "
             "ca, au, fr, it, es, jp, mx, br, walmart. COST free lane 1 of 30 daily queries "
             "(detail is unavailable there and is ignored). Keyed: 2 credits, or 5 with "
-            "detail=true. Empty result sets are never billed. With detail=true the response "
-            "also carries seller_ratings (seller feedback for every seller the detail blocks "
-            "name; 2026-09-18)."
+            "detail=true. Empty result sets are never billed. detail=true attaches to EVERY "
+            "product everything the basic product call carries (2026-09-28): current sellers "
+            "with fulfillment and delivery, 30-day price/stock events, stock history, "
+            "brand_stats, dimensions, deal/badge/rating history, variation coverage, page "
+            "content and up to 50 featured reviews, plus a response-wide seller_ratings "
+            "array; only bsr_history and offer_history stay product-only."
         ),
         "inputSchema": {
             "type": "object",
