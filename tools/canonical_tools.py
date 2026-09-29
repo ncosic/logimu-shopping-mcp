@@ -61,7 +61,7 @@ TOOLS = [
             "seen with, per child, whether we track it and its latest 30-day price - current "
             "state, not history). With offer_history=true every per-seller point also carries "
             "that day's shipping cost, fba and prime. Amazon "
-            "answers also carry the observed product-page content block: description (with "
+            "answers also carry the observed product-page content, the byline (authors[] with role_norm author/narrator/illustrator/editor/translator + author for books, audiobooks, music; 2026-09-29) block: description (with "
             "description_source), feature_bullets, images, breadcrumbs, variations with "
             "variation_count and parent_asin, stamped content_observed_at — "
             "content_observed_at:null with empty arrays means the content crawl has not "
