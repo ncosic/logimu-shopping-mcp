@@ -57,7 +57,9 @@ TOOLS = [
             "that day's shipping cost, fba and prime. Amazon answers also carry the observed "
             "product-page content, the byline (authors[] with role_norm "
             "author/narrator/illustrator/editor/translator + author for books, audiobooks, "
-            "music; 2026-09-29) block: description (with description_source), "
+            "music; 2026-09-29), the book/media format (format, format_norm, and formats[]: every "
+            "format of the book, each its own ASIN with price and membership subscription_price, "
+            "plus family_asin; 2026-09-30) block: description (with description_source), "
             "feature_bullets, images, breadcrumbs, variations with variation_count and "
             "parent_asin, stamped content_observed_at — content_observed_at:null with empty "
             "arrays means the content crawl has not captured this ASIN yet, never 'this "
@@ -365,6 +367,24 @@ TOOLS = [
                 "in_stock": {
                     "type": "boolean",
                     "description": "Only products currently in stock.",
+                },
+                "format": {
+                    "type": "string",
+                    "description": (
+                        "Books/media only: return only this format - kindle, paperback, hardcover, "
+                        "mass_market, audiobook, audio_cd, board_book, spiral, library_binding or "
+                        "other (comma-separate several). USE WHEN the user wants a specific edition "
+                        "('LOTR in paperback', 'the audiobook')."
+                    ),
+                },
+                "collapse": {
+                    "type": "boolean",
+                    "default": True,
+                    "description": (
+                        "true (default): one row per book, its other formats listed in the row's "
+                        "`formats` (each with its own ASIN and price). false: every format as its "
+                        "own row."
+                    ),
                 },
                 "include_unavailable": {
                     "type": "boolean",
