@@ -37,6 +37,8 @@ serp, keyed-only as before); anonymous callers see product / shopping / search. 
 say so. Costs: seller -> seller_credits.py (profile 0.5 cache / 1 live, +0.5 history; products
 1 per page); brand/category/market_lists -> derived_credits.py (1 per record, 1 per page of 25,
 +0.5 history, lookups and misses 0; per-key daily cap on the family, default 2,000).
+
+2026-10-05 (later): seller tool takes name= as an alternative to seller_id (B120) - anyOf on the schema.
 """
 
 TOOLS = [
@@ -691,16 +693,18 @@ TOOLS = [
             "at the earliest, so expect 1-2 points per seller for now. HONESTY: a 404 means "
             "Amazon has no seller page for that id on that marketplace (or we never observed "
             "it, in cache mode); a 502 is a collection failure, not a fact about the seller - "
-            "retry. An empty storefront does not confirm the seller exists. COST: paid plan "
-            "required - the tool is listed only for keys on a paid plan (no free lane). "
-            "Profile: 1 credit live, 0.5 from cache, auto bills what was served; history=true "
-            "+0.5 once when at least one point comes back. Products: 1 credit per storefront "
-            "page fetched (live) or per page of 25 observed products (cache). Feedback, "
-            "business details and tracking are included at no extra charge. Not found, "
-            "unavailable, blocked, empty storefront, empty history: 0. DERIVED (2026-10-05): "
-            "brands=true adds the operator footprint - the brands this seller was observed "
-            "winning the buy box on, with buy-box days (+1 credit per page of 25); "
-            "network=true adds the connected sellers that win on the same brands (+1 credit)."
+            "retry. An empty storefront does not confirm the seller exists. LOOKUP: give "
+            "seller_id, or name (resolved through observed buy-box data to the id, free). "
+            "COST: paid plan required - the tool is listed only for keys on a paid plan (no "
+            "free lane). Profile: 1 credit live, 0.5 from cache, auto bills what was served; "
+            "history=true +0.5 once when at least one point comes back. Products: 1 credit "
+            "per storefront page fetched (live) or per page of 25 observed products (cache). "
+            "Feedback, business details and tracking are included at no extra charge. Not "
+            "found, unavailable, blocked, empty storefront, empty history: 0. DERIVED "
+            "(2026-10-05): brands=true adds the operator footprint - the brands this seller "
+            "was observed winning the buy box on, with buy-box days (+1 credit per page of "
+            "25); network=true adds the connected sellers that win on the same brands (+1 "
+            "credit)."
         ),
         "inputSchema": {
             "type": "object",
@@ -708,6 +712,15 @@ TOOLS = [
                 "seller_id": {
                     "type": "string",
                     "description": "Amazon seller id: 'A' + 8-24 letters/digits.",
+                },
+                "name": {
+                    "type": "string",
+                    "description": (
+                        "Instead of seller_id: the seller's display name as Amazon prints it "
+                        "(e.g. 'Total Office Solutions'). Resolved through observed buy-box "
+                        "data to the seller id; a name we have never observed, or one with no "
+                        "id on record, returns guidance - nothing is billed."
+                    ),
                 },
                 "country": {
                     "type": "string",
@@ -798,7 +811,14 @@ TOOLS = [
                     ),
                 },
             },
-            "required": ["seller_id"],
+            "anyOf": [
+                {
+                    "required": ["seller_id"],
+                },
+                {
+                    "required": ["name"],
+                },
+            ],
         },
     },
     {
