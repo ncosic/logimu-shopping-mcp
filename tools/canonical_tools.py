@@ -28,6 +28,15 @@ on search states it in the part of the schema a client validates against.
 2026-08-09: catalog resynced FROM the live tools/list (serp added live-first, plus
 GTIN, content-block and anchor-anyOf description updates that had drifted). Going
 forward, edit HERE and re-run gen.py, per the invariant above.
+
+2026-10-05: resynced FROM the hosted _TOOLS again (live wins): the seller tool (10-04) and the
+derived-intelligence tools brand / category / market_lists (10-05) had been added to the hosted
+file by hand, and the 09-30 shopping format/collapse params had reached stub.py but not this file.
+The four are PAID-PLAN tools: the hosted server lists them only to keys with a paid lot (plus
+serp, keyed-only as before); anonymous callers see product / shopping / search. Their COST lines
+say so. Costs: seller -> seller_credits.py (profile 0.5 cache / 1 live, +0.5 history; products
+1 per page); brand/category/market_lists -> derived_credits.py (1 per record, 1 per page of 25,
++0.5 history, lookups and misses 0; per-key daily cap on the family, default 2,000).
 """
 
 TOOLS = [
@@ -60,8 +69,12 @@ TOOLS = [
             "ratings_gained_30d/90d), and variation_coverage (the variation matrix as last "
             "seen with, per child, whether we track it and its latest 30-day price - current "
             "state, not history). With offer_history=true every per-seller point also carries "
-            "that day's shipping cost, fba and prime. Amazon "
-            "answers also carry the observed product-page content, the byline (authors[] with role_norm author/narrator/illustrator/editor/translator + author for books, audiobooks, music; 2026-09-29) block: description (with "
+            "that day's shipping cost, fba and prime. Amazon answers also carry the observed "
+            "product-page content, the byline (authors[] with role_norm "
+            "author/narrator/illustrator/editor/translator + author for books, audiobooks, "
+            "music; 2026-09-29), the book/media format (format, format_norm, and formats[]: "
+            "every format of the book, each its own ASIN with price and membership "
+            "subscription_price, plus family_asin; 2026-09-30) block: description (with "
             "description_source), feature_bullets, images, breadcrumbs, variations with "
             "variation_count and parent_asin, stamped content_observed_at — "
             "content_observed_at:null with empty arrays means the content crawl has not "
@@ -75,17 +88,18 @@ TOOLS = [
             "walmart. Walmart takes a numeric item ID (or gtin= with the item's UPC) and "
             "returns the intelligence blocks plus its listing content: image_url, "
             "description, breadcrumbs, highlights (spec name/value pairs), warnings, upc, "
-            "rating/review_count, was_price, in_stock, and shipping_cost per seller (no "
-            "live scrape on Walmart). COST free lane 1 of 30 daily queries, cache only, and "
+            "rating/review_count, was_price, in_stock, and shipping_cost per seller (no live "
+            "scrape on Walmart). COST free lane 1 of 30 daily queries, cache only, and "
             "returns the snapshot + 30-day views (the full history streams, bsr_history, "
             "offer_history and live scrapes need an API key (plans from $19/mo) — the "
-            "response's locked block lists exactly what a key unlocks). Keyed (2026-09-27): 0.5 "
-            "credits from cache with everything included, 1 for a live scrape, +0.5 ONCE for "
-            "history when bsr_history and/or offer_history come back (one charge for both). Misses and partial scrapes are never billed; a "
-            "miss may return a hint (found on another marketplace, or retry with mode=live). "
-            "SELLER FEEDBACK (2026-09-18): every response carries seller_ratings - one entry "
-            "per seller the answer names (current offers, cheapest new/used, buy-box holder "
-            "and, with offer_history, every historical seller) with seller_positive_pct, "
+            "response's locked block lists exactly what a key unlocks). Keyed (2026-09-27): "
+            "0.5 credits from cache with everything included, 1 for a live scrape, +0.5 ONCE "
+            "for history when bsr_history and/or offer_history come back (one charge for "
+            "both). Misses and partial scrapes are never billed; a miss may return a hint "
+            "(found on another marketplace, or retry with mode=live). SELLER FEEDBACK "
+            "(2026-09-18): every response carries seller_ratings - one entry per seller the "
+            "answer names (current offers, cheapest new/used, buy-box holder and, with "
+            "offer_history, every historical seller) with seller_positive_pct, "
             "seller_feedback_count, seller_rating and observed_at from a nightly "
             "seller-feedback table; offer_history.sellers[] rows carry the same fields "
             "directly. Amazon's own offers have no feedback. Not billed."
@@ -180,7 +194,8 @@ TOOLS = [
                     "description": (
                         "Attach the buy-box owner timeline and per-seller daily price series "
                         "(US buy-box depth back to Dec 2024). Amazon marketplaces only, API "
-                        "key required (free key works). History charge +0.5 once per call, shared with offer_history."
+                        "key required (free key works). History charge +0.5 once per call, "
+                        "shared with offer_history."
                     ),
                 },
                 "history_sellers": {
@@ -290,8 +305,8 @@ TOOLS = [
             "product everything the basic product call carries (2026-09-28): current sellers "
             "with fulfillment and delivery, 30-day price/stock events, stock history, "
             "brand_stats, dimensions, deal/badge/rating history, variation coverage, page "
-            "content and up to 50 featured reviews, plus a response-wide seller_ratings array; "
-            "only bsr_history and offer_history stay product-only."
+            "content and up to 50 featured reviews, plus a response-wide seller_ratings "
+            "array; only bsr_history and offer_history stay product-only."
         ),
         "inputSchema": {
             "type": "object",
@@ -369,15 +384,33 @@ TOOLS = [
                     "type": "boolean",
                     "description": "Only products currently in stock.",
                 },
+                "format": {
+                    "type": "string",
+                    "description": (
+                        "Books/media only: return only this format - kindle, paperback, "
+                        "hardcover, mass_market, audiobook, audio_cd, board_book, spiral, "
+                        "library_binding or other (comma-separate several). USE WHEN the user "
+                        "wants a specific edition ('LOTR in paperback', 'the audiobook')."
+                    ),
+                },
+                "collapse": {
+                    "type": "boolean",
+                    "default": True,
+                    "description": (
+                        "true (default): one row per book, its other formats listed in the "
+                        "row's `formats` (each with its own ASIN and price). false: every "
+                        "format as its own row."
+                    ),
+                },
                 "include_unavailable": {
                     "type": "boolean",
                     "default": False,
                     "description": (
-                        "false (default): only products with a current offer, so the shortlist "
-                        "is buyable. true: also list items that currently have NO offer on the "
-                        "marketplace (Amazon 'Currently unavailable': price null, in_stock "
-                        "false). USE WHEN the user asks about a specific discontinued or "
-                        "sold-out product; otherwise leave it off."
+                        "false (default): only products with a current offer, so the "
+                        "shortlist is buyable. true: also list items that currently have NO "
+                        "offer on the marketplace (Amazon 'Currently unavailable': price "
+                        "null, in_stock false). USE WHEN the user asks about a specific "
+                        "discontinued or sold-out product; otherwise leave it off."
                     ),
                 },
                 "sort": {
@@ -628,6 +661,147 @@ TOOLS = [
         },
     },
     {
+        "name": "seller",
+        "description": (
+            "Amazon SELLER profile by seller id, optionally with the products the seller "
+            "sells. USE WHEN the user asks about a third-party seller / merchant / storefront "
+            "(who they are, how they are rated, what they sell) - the seller id is the 'A...' "
+            "code in /sp?seller=... or the seller_id on any offer the product tool returns. "
+            "RETURNS seller (name, rating, lifetime and 12-month rating counts, positive %, "
+            "is_amazon), feedback_summary per period (30 d / 90 d / 12 m / lifetime: average "
+            "rating + count - Amazon no longer publishes positive/neutral/negative splits), "
+            "rating_histogram, recent_feedback (up to 5 entries as date / rating / struck "
+            "ONLY - never the buyer's name or text), and business (legal name, registration / "
+            "VAT numbers, address, phone, email, representative) where the seller publishes "
+            "it on Amazon - all 11 marketplaces; au and ca pages carry no business block, so "
+            "it is null there. With products=true, also seller_products: mode=live the "
+            "storefront as Amazon shows it now (the serp object, SECONDS), mode=cache the "
+            "products we OBSERVED the seller offering (25 per page, buy-box days, observed "
+            "price range, <100 ms). MODES for the profile: cache = our stored observation - "
+            "the seller page as our tracker last read it (the full profile; sellers are "
+            "re-read about every 14 days), or the page fetched in the last 24 h, or for "
+            "sellers not stored yet the warehouse rating record; live = fetch the seller page "
+            "now (5-20 s, up to ~30 s); auto (default) = stored when younger than "
+            "max_age_days (default 14), else live. tracking{} says since when we have "
+            "observed the seller (observed_first_seen), when last (last_observed) and how "
+            "often - OBSERVED, never 'founded' or 'active since'. With history=true also "
+            "history{}: the seller's rating change points (positive %, star rating, counts "
+            "per 30 d / 90 d / 12 m / lifetime) and storefront-size points, oldest first, UTC "
+            "- change points, each value holds until the next; the series starts 2026-10-04 "
+            "at the earliest, so expect 1-2 points per seller for now. HONESTY: a 404 means "
+            "Amazon has no seller page for that id on that marketplace (or we never observed "
+            "it, in cache mode); a 502 is a collection failure, not a fact about the seller - "
+            "retry. An empty storefront does not confirm the seller exists. COST: paid plan "
+            "required - the tool is listed only for keys on a paid plan (no free lane). "
+            "Profile: 1 credit live, 0.5 from cache, auto bills what was served; history=true "
+            "+0.5 once when at least one point comes back. Products: 1 credit per storefront "
+            "page fetched (live) or per page of 25 observed products (cache). Feedback, "
+            "business details and tracking are included at no extra charge. Not found, "
+            "unavailable, blocked, empty storefront, empty history: 0. DERIVED (2026-10-05): "
+            "brands=true adds the operator footprint - the brands this seller was observed "
+            "winning the buy box on, with buy-box days (+1 credit per page of 25); "
+            "network=true adds the connected sellers that win on the same brands (+1 credit)."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "seller_id": {
+                    "type": "string",
+                    "description": "Amazon seller id: 'A' + 8-24 letters/digits.",
+                },
+                "country": {
+                    "type": "string",
+                    "enum": ["us", "uk", "de", "ca", "au", "fr", "it", "es", "jp", "mx", "br"],
+                    "default": "us",
+                    "description": (
+                        "Amazon marketplace. No Walmart - seller pages are Amazon-only."
+                    ),
+                },
+                "mode": {
+                    "type": "string",
+                    "enum": ["cache", "live", "auto"],
+                    "default": "auto",
+                    "description": (
+                        "Profile lane (see description). products=true uses products_mode."
+                    ),
+                },
+                "max_age_days": {
+                    "type": "integer",
+                    "default": 14,
+                    "description": (
+                        "auto only: how old the stored observation may be before fetching "
+                        "live (default 14 = the tracker's cadence)."
+                    ),
+                },
+                "history": {
+                    "type": "boolean",
+                    "default": False,
+                    "description": (
+                        "Also return history{} (rating + storefront-size change points, "
+                        "oldest first, UTC). +0.5 credit when non-empty."
+                    ),
+                },
+                "history_points": {
+                    "type": "integer",
+                    "default": 500,
+                    "description": (
+                        "history=true: the latest N change points per series (1-5000)."
+                    ),
+                },
+                "products": {
+                    "type": "boolean",
+                    "default": False,
+                    "description": (
+                        "Also return the seller's products (billed separately, see "
+                        "description)."
+                    ),
+                },
+                "products_mode": {
+                    "type": "string",
+                    "enum": ["cache", "live"],
+                    "default": "cache",
+                    "description": (
+                        "cache = observed products (fast); live = the storefront now "
+                        "(seconds)."
+                    ),
+                },
+                "page": {
+                    "type": "integer",
+                    "default": 1,
+                    "description": (
+                        "Products page (cache: 25 per page; live: Amazon's page 1-10)."
+                    ),
+                },
+                "max_page": {
+                    "type": "integer",
+                    "description": (
+                        "live products only: auto-paginate up to this page (max 10); billed "
+                        "per page fetched."
+                    ),
+                },
+                "brands": {
+                    "type": "boolean",
+                    "default": False,
+                    "description": (
+                        "Also return the operator footprint: brands this seller was observed "
+                        "winning the buy box on (16 months), 25 per page (brands_page). +1 "
+                        "credit per page."
+                    ),
+                },
+                "brands_page": {"type": "integer", "default": 1},
+                "network": {
+                    "type": "boolean",
+                    "default": False,
+                    "description": (
+                        "Also return connected sellers: sellers winning the buy box on the "
+                        "same brands, strongest overlap first (max 50). +1 credit."
+                    ),
+                },
+            },
+            "required": ["seller_id"],
+        },
+    },
+    {
         "name": "serp",
         "description": (
             "LIVE Amazon search-results (SERP) fetch: a real browser navigates Amazon's "
@@ -727,6 +901,208 @@ TOOLS = [
             "destructiveHint": False,
             "idempotentHint": True,
             "openWorldHint": True,
+        },
+    },
+    {
+        "name": "brand",
+        "description": (
+            "Amazon BRAND dossier from Logimu's own buy-box observations (derived "
+            "intelligence, not estimates): catalog size, how many sellers win the buy box, "
+            "control score (share of buy-box days won by FBA offers), winner diversity, "
+            "Amazon's own retail share, FBA penetration, seller concentration (HHI) and "
+            "churn, seller-pressure trend grades, since when we have observed the brand, its "
+            "dominant category with p25/p50/p75 benchmarks, and the top-10 sellers by "
+            "observed buy-box days with their feedback records. USE WHEN the user asks who "
+            "sells a brand, how contested / Amazon-dominated / FBA-heavy a brand is, whether "
+            "a brand is gaining or losing sellers, or wants to vet a brand for wholesale / "
+            "arbitrage / brand protection. OPTIONS: sellers=true adds the full seller list "
+            "(25 per page, page=N); network=true adds the brand's SELLER MAP - the brands "
+            "connected to it because the same third-party sellers win the buy box on both "
+            "(edges weighted by shared sellers, one hop, max 50); history=true adds up to 24 "
+            "calendar months (ASINs, sellers, buy-box days, price, rating). All 11 Amazon "
+            "marketplaces, no Walmart. HONESTY: 'observed since' is our data horizon, not the "
+            "brand's age; a 404 means we have not observed the brand (names are matched as "
+            "Amazon prints them). COST: paid plan required (the tool is listed only for keys "
+            "on a paid plan). 1 credit for the dossier, +0.5 once when history comes back "
+            "non-empty, +1 per page of sellers, +1 for the network. Unknown brand: 0."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "brand": {
+                    "type": "string",
+                    "description": "Brand name as Amazon prints it (case-insensitive).",
+                },
+                "country": {
+                    "type": "string",
+                    "enum": ["us", "uk", "de", "ca", "au", "fr", "it", "es", "jp", "mx", "br"],
+                    "default": "us",
+                    "description": "Amazon marketplace.",
+                },
+                "history": {
+                    "type": "boolean",
+                    "default": False,
+                    "description": (
+                        "Add history.monthly (up to 24 months). +0.5 credit when non-empty."
+                    ),
+                },
+                "sellers": {
+                    "type": "boolean",
+                    "default": False,
+                    "description": "Add the full seller list (25 per page). +1 credit per page.",
+                },
+                "page": {
+                    "type": "integer",
+                    "default": 1,
+                    "description": "Seller-list page (with sellers=true).",
+                },
+                "network": {
+                    "type": "boolean",
+                    "default": False,
+                    "description": (
+                        "Add the seller map: connected brands + weighted edges. +1 credit."
+                    ),
+                },
+                "network_limit": {
+                    "type": "integer",
+                    "default": 20,
+                    "description": "Edges to return with network=true (1-50).",
+                },
+            },
+            "required": ["brand"],
+        },
+        "annotations": {
+            "title": "Brand dossier (observed)",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False,
+        },
+    },
+    {
+        "name": "category",
+        "description": (
+            "Amazon CATEGORY landscape from Logimu's observations: size (ASINs, brands, "
+            "sellers), pricing and rating averages, Amazon's own retail share, FBA "
+            "penetration, Amazon private-label share, seller concentration (HHI top-5), heat "
+            "(competitive intensity), 30-day catalog churn, demand signals "
+            "(bought-past-month, revenue signal, velocity tier), root-level benchmark "
+            "percentiles, the sub-categories and - for root categories - the top-10 brands by "
+            "observed buy-box days. USE WHEN the user asks how competitive / Amazon-dominated "
+            "/ FBA-heavy a category is, how big it is, which brands lead it, or wants to size "
+            "a private-label or wholesale entry. Give category_id (a browse-node id) OR q (a "
+            "name fragment) - with q the tool first returns matching categories (free) so you "
+            "can pick the id. history=true adds months of products / brands / sellers. All 11 "
+            "Amazon marketplaces. COST: paid plan required (listed only for keys on a paid "
+            "plan). 1 credit per category profile, +0.5 with non-empty history; the name "
+            "lookup is free; unknown id: 0."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "category_id": {"type": "integer", "description": "Category (browse node) id."},
+                "q": {
+                    "type": "string",
+                    "description": (
+                        "Instead of an id: part of a category name or path - returns "
+                        "candidate categories, free."
+                    ),
+                },
+                "country": {
+                    "type": "string",
+                    "enum": ["us", "uk", "de", "ca", "au", "fr", "it", "es", "jp", "mx", "br"],
+                    "default": "us",
+                    "description": "Amazon marketplace.",
+                },
+                "history": {
+                    "type": "boolean",
+                    "default": False,
+                    "description": "Add history.monthly. +0.5 credit when non-empty.",
+                },
+            },
+        },
+        "annotations": {
+            "title": "Category landscape (observed)",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False,
+        },
+    },
+    {
+        "name": "market_lists",
+        "description": (
+            "Ranked LISTS from Logimu's observations, 25 per page: kind=brand_movers (brands "
+            "gaining or losing distinct buy-box sellers fastest over 30 or 90 days), "
+            "seller_movers (sellers whose buy-box footprint grew or shrank most), top_brands "
+            "(brands ranked by observed buy-box days / sellers / control_score / asins / "
+            "revenue / amazon_share, optionally within a root category_id), top_sellers "
+            "(third-party sellers ranked by brands / buybox_days / asins / revenue - the "
+            "cross-brand operators), top_categories (categories ranked by asins / brands / "
+            "heat / revenue / price / sellers, root categories by default, or the children of "
+            "parent_id). USE WHEN the user wants to DISCOVER brands, sellers or categories "
+            "rather than look one up - sourcing leads, brands under seller pressure, the "
+            "biggest resellers, which categories are hot. Then drill in with the brand / "
+            "seller / category tools. All 11 Amazon marketplaces. COST: paid plan required "
+            "(listed only for keys on a paid plan), 1 credit per page of 25 rows returned (an "
+            "empty page is free). Daily cap per key on the derived family (default 2,000 "
+            "calls)."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "kind": {
+                    "type": "string",
+                    "enum": [
+                        "brand_movers",
+                        "seller_movers",
+                        "top_brands",
+                        "top_sellers",
+                        "top_categories",
+                    ],
+                },
+                "country": {
+                    "type": "string",
+                    "enum": ["us", "uk", "de", "ca", "au", "fr", "it", "es", "jp", "mx", "br"],
+                    "default": "us",
+                    "description": "Amazon marketplace.",
+                },
+                "window": {
+                    "type": "integer",
+                    "enum": [30, 90],
+                    "default": 30,
+                    "description": "movers: comparison window in days.",
+                },
+                "direction": {
+                    "type": "string",
+                    "enum": ["up", "down"],
+                    "default": "up",
+                    "description": "movers: gaining (up) or losing (down).",
+                },
+                "sort": {
+                    "type": "string",
+                    "description": "top_*: the ranking field (see description).",
+                },
+                "category_id": {
+                    "type": "integer",
+                    "description": "top_brands: root category id to narrow to.",
+                },
+                "parent_id": {
+                    "type": "integer",
+                    "description": (
+                        "top_categories: list this category's children instead of roots."
+                    ),
+                },
+                "page": {"type": "integer", "default": 1},
+            },
+            "required": ["kind"],
+        },
+        "annotations": {
+            "title": "Market lists (observed)",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False,
         },
     },
 ]

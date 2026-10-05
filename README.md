@@ -26,21 +26,28 @@ Then ask things like:
 
 ## Tools
 
-| Tool | Use when | Returns | Free-lane cost |
+| Tool | Use when | Returns | Lane |
 |---|---|---|---|
-| `shopping` | "best X", "find me Y under $Z" — you want a shortlist | Ranked, grouped products (category or Budget/Mid/Premium tiers) with real ratings, prices, stock, `observed_at` stamps + brand facets, in ~100ms | 1 of 30 daily |
-| `product` | You have a specific ASIN/item — "good buy?", "price history?", "who sells this?" | Current snapshot + intelligence blocks: 30-day price/stock change events, all-seller offer table, brand stats | 1 of 30 daily |
-| `search` | Filtered structured lists — price/rating/review/BSR/FBA filters, sorting | Up to 25 rows on the free lane from 17M+ tracked products across all 11 Amazon marketplaces plus Walmart US | 1 of 30 daily |
+| `shopping` | "best X", "find me Y under $Z" — you want a shortlist | Ranked, grouped products (category or Budget/Mid/Premium tiers) with real ratings, prices, stock, `observed_at` stamps + brand facets, in ~100ms | Free: 1 of 30 daily |
+| `product` | You have a specific ASIN/item — "good buy?", "price history?", "who sells this?" | Current snapshot + intelligence blocks: 30-day price/stock change events, all-seller offer table, brand stats; full histories with a key | Free: 1 of 30 daily |
+| `search` | Filtered structured lists — price/rating/review/BSR/FBA filters, sorting | Up to 25 rows on the free lane, across all 11 Amazon marketplaces plus Walmart US | Free: 1 of 30 daily |
+| `serp` | The live Amazon search-results page for a query, right now | Organic grid, sponsored and video blocks, refinements, pagination — a real fetch, seconds | API key: 1 credit per page fetched |
+| `seller` | A seller id — rating and feedback history, the storefront, the brands it was observed winning the buy box on, connected sellers | Stored profile (0.5) or live (1), +0.5 history; storefront pages 1 each; `brands` / `network` blocks +1 | Paid plan |
+| `brand` | Who sells a brand, how contested / Amazon-dominated / FBA-heavy it is, its seller map | Brand dossier from observed buy-box data (1), +0.5 history, +1 per sellers page, +1 for the network of brands sharing sellers | Paid plan |
+| `category` | How big / competitive / Amazon-dominated a category is, which brands lead it | Category landscape by id (1, +0.5 history); the name lookup is free | Paid plan |
+| `market_lists` | Discover rather than look up — brands gaining or losing sellers, the biggest operators, categories ranked | 25 rows per page, 1 credit per page | Paid plan |
+
+The paid-plan tools (`seller`, `brand`, `category`, `market_lists`) appear in `tools/list` only for keys on a paid plan; the stub lists the whole catalog so directories can see it. Every derived figure is an observed count or share from Logimu's own data — never an estimate — and "observed since" is the data horizon, not a founding date.
 
 Full REST API reference (same engine, same data): [api.logimu.com/docs](https://api.logimu.com/docs)
 
-## Free tier, honestly stated
+## Free lane and paid plans, honestly stated
 
-| | Free (no signup) | With a free API key |
+| | Free (no signup) | Paid plan (API key) |
 |---|---|---|
-| Queries | 30 / day | 2,500 free credits, then flat credits from $0.15 per 1,000 |
-| Data | Full warehouse, cached (fresh, timestamped) | Warehouse + `mode=live` on-demand scrape (~6s, any Amazon marketplace) + shopping `detail` mode |
-| Signup | None | Email only, no card — [api.logimu.com](https://api.logimu.com) |
+| Queries | 30 / day | Credit-metered — subscriptions from $19/month, one-time credit packs, unconditional 14-day money-back |
+| Data | Warehouse `shopping` / `product` / `search`, cached (fresh, timestamped) | + `mode=live` on-demand fetches, `serp`, seller profiles, brand / category intelligence and market lists, batch jobs on the REST API |
+| Signup | None | [api.logimu.com](https://api.logimu.com) |
 
 - Every record carries an `observed_at` timestamp — data is **observed** from our warehouse, not a live retailer feed.
 - We have **no affiliate or seller relationship** with anything the tools return. Nothing is ranked because someone paid for it.
