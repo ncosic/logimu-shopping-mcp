@@ -36,8 +36,9 @@ Then ask things like:
 | `brand` | Who sells a brand, how contested / Amazon-dominated / FBA-heavy it is, its seller map | Brand dossier from observed buy-box data (1), +0.5 history, +1 per sellers page, +1 for the network of brands sharing sellers | Paid plan |
 | `category` | How big / competitive / Amazon-dominated a category is, which brands lead it | Category landscape by id (1, +0.5 history); the name lookup is free | Paid plan |
 | `market_lists` | Discover rather than look up — brands gaining or losing sellers, the biggest operators, categories ranked | 25 rows per page, 1 credit per page | Paid plan |
+| `keywords` | Amazon's own autocomplete suggestion lists for a seed (positions within each list, first/last observed, marketplaces observed in, related vocabulary), `history` = each list's observation record, `compare` = the seed across marketplaces | 1 credit per lookup or compare, +0.5 with history | Paid plan |
 
-The paid-plan tools (`seller`, `brand`, `category`, `market_lists`) appear in `tools/list` only for keys on a paid plan; the stub lists the whole catalog so directories can see it. Every derived figure is an observed count or share from Logimu's own data — never an estimate — and "observed since" is the data horizon, not a founding date.
+The paid-plan tools (`seller`, `brand`, `category`, `market_lists`, `keywords`) appear in `tools/list` only for keys on a paid plan; the stub lists the whole catalog so directories can see it. Every derived figure is an observed count or share from Logimu's own data — never an estimate — and "observed since" is the data horizon, not a founding date. Keyword answers are Amazon's own suggestion ranking as observed — positions within one list, never volume figures and never a product-ranking map.
 
 Full REST API reference (same engine, same data): [api.logimu.com/docs](https://api.logimu.com/docs)
 
