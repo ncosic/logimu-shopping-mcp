@@ -16,7 +16,7 @@ HOSTED = "https://api.logimu.com/mcp"
 SERVER_INFO = {
     "name": "Logimu",
     "title": "Logimu — Amazon & Walmart Shopping Data",
-    "version": "1.3.1",
+    "version": "1.4.0",
     "websiteUrl": "https://api.logimu.com",
 }
 
@@ -993,22 +993,49 @@ TOOLS = [
             "percentiles, the sub-categories and - for root categories - the top-10 brands by "
             "observed buy-box days. USE WHEN the user asks how competitive / Amazon-dominated "
             "/ FBA-heavy a category is, how big it is, which brands lead it, or wants to size "
-            "a private-label or wholesale entry. Give category_id (a browse-node id) OR q (a "
-            "name fragment) - with q the tool first returns matching categories (free) so you "
-            "can pick the id. history=true adds months of products / brands / sellers. All 11 "
-            "Amazon marketplaces. COST: paid plan required (listed only for keys on a paid "
-            "plan). 1 credit per category profile, +0.5 with non-empty history; the name "
-            "lookup is free; unknown id: 0."
+            "a private-label or wholesale entry. Give category_id (Logimu's category id - the "
+            "one every search result carries; or node_id for an Amazon browse-node id) OR q "
+            "(a name fragment, English alias included) - with q the tool first returns "
+            "matching categories (free) so you can pick the id - OR list=true to walk the "
+            "taxonomy (the marketplace's root categories, or the children of parent_id; "
+            "free). history=true adds months of products / brands / sellers. All 11 Amazon "
+            "marketplaces. COST: paid plan required (listed only for keys on a paid plan). 1 "
+            "credit per category profile, +0.5 with non-empty history; the name lookup and "
+            "the taxonomy listing are free; unknown id: 0."
         ),
         "inputSchema": {
             "type": "object",
             "properties": {
-                "category_id": {"type": "integer", "description": "Category (browse node) id."},
+                "category_id": {
+                    "type": "integer",
+                    "description": (
+                        "Logimu category id (warehouse id, as returned by every search result "
+                        "and listing)."
+                    ),
+                },
+                "node_id": {
+                    "type": "integer",
+                    "description": "Instead of category_id: the Amazon browse-node id.",
+                },
                 "q": {
                     "type": "string",
                     "description": (
-                        "Instead of an id: part of a category name or path - returns "
-                        "candidate categories, free."
+                        "Instead of an id: part of a category name or path (English alias "
+                        "included) - returns candidate categories, free."
+                    ),
+                },
+                "list": {
+                    "type": "boolean",
+                    "default": False,
+                    "description": (
+                        "Walk the taxonomy: the marketplace's root categories, or the "
+                        "children of parent_id. Free."
+                    ),
+                },
+                "parent_id": {
+                    "type": "integer",
+                    "description": (
+                        "With list=true: list this category's children instead of the roots."
                     ),
                 },
                 "country": {
@@ -1102,6 +1129,68 @@ TOOLS = [
         },
         "annotations": {
             "title": "Market lists (observed)",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False,
+        },
+    },
+    {
+        "name": "keywords",
+        "description": (
+            "Amazon's OWN autocomplete suggestion lists for a seed term, from Logimu's "
+            "continuous harvest (since Aug 2026, 11 marketplaces): up to 6 lists - one per "
+            "crawled prefix / department - each term with its position 1-10 WITHIN that list, "
+            "when it was first and last observed and the marketplaces it was observed in, "
+            "plus related observed vocabulary starting with the seed. history=true adds every "
+            "observation of each list since the harvest began (a term entering, leaving or "
+            "moving position). compare='us,uk,de' instead returns the seed's primary list on "
+            "each marketplace and a matrix of positions per marketplace. USE WHEN the user "
+            "asks what buyers type for X, wants listing / backend keyword language, seeds for "
+            "product research, or how a term's suggestions differ by country. NOT volume "
+            "figures (Amazon publishes none for its suggestions and none are implied), NOT a "
+            "product-ranking map - for products pass a term to the shopping tool. Positions "
+            "are comparable only within one list. COST: paid plan required (listed only for "
+            "keys on a paid plan), 1 credit per lookup or compare, +0.5 with history when at "
+            "least one closed observation exists; an unknown seed is free. Counts against the "
+            "derived daily cap (default 2,000 calls per key)."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "seed": {
+                    "type": "string",
+                    "description": (
+                        "A seed term or prefix, at least 3 characters, e.g. 'electric "
+                        "toothbrush'."
+                    ),
+                },
+                "country": {
+                    "type": "string",
+                    "enum": ["us", "uk", "de", "ca", "au", "fr", "it", "es", "jp", "mx", "br"],
+                    "default": "us",
+                    "description": "Amazon marketplace (ignored when compare is given).",
+                },
+                "history": {
+                    "type": "boolean",
+                    "default": False,
+                    "description": (
+                        "Also return each list's observation history (+0.5 credit when a "
+                        "closed observation exists)."
+                    ),
+                },
+                "compare": {
+                    "type": "string",
+                    "description": (
+                        "Comma-separated marketplaces to compare instead of one lookup, e.g. "
+                        "'us,uk,de' (2-11)."
+                    ),
+                },
+            },
+            "required": ["seed"],
+        },
+        "annotations": {
+            "title": "Keyword suggestions (observed)",
             "readOnlyHint": True,
             "destructiveHint": False,
             "idempotentHint": True,
