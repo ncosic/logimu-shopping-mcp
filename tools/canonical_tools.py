@@ -195,9 +195,9 @@ TOOLS = [
                     "default": False,
                     "description": (
                         "Attach the buy-box owner timeline and per-seller daily price series "
-                        "(US buy-box depth back to Dec 2024). Amazon marketplaces only, API "
-                        "key required (free key works). History charge +0.5 once per call, "
-                        "shared with offer_history."
+                        "(US buy-box depth back to Dec 2024). Amazon marketplaces only; needs "
+                        "a paid-plan API key (from $19/mo). History charge +0.5 once per call, "
+                        "shared with bsr_history."
                     ),
                 },
                 "history_sellers": {
@@ -229,8 +229,8 @@ TOOLS = [
                     "description": (
                         "Attach the full per-category BSR rank history (era-tagged daily "
                         "points back to Oct 2023 for US; legacy top-100 segments are flagged "
-                        "censored). Amazon marketplaces only, API key required (free key "
-                        "works). History charge +0.5 once per call, shared with bsr_history."
+                        "censored). Amazon marketplaces only; needs a paid-plan API key (from "
+                        "$19/mo). History charge +0.5 once per call, shared with offer_history."
                     ),
                 },
             },
