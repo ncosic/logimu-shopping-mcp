@@ -16,7 +16,7 @@ HOSTED = "https://api.logimu.com/mcp"
 SERVER_INFO = {
     "name": "Logimu",
     "title": "Logimu — Amazon & Walmart Shopping Data",
-    "version": "1.4.0",
+    "version": "1.4.1",
     "websiteUrl": "https://api.logimu.com",
 }
 
@@ -178,9 +178,9 @@ TOOLS = [
                     "default": False,
                     "description": (
                         "Attach the buy-box owner timeline and per-seller daily price series "
-                        "(US buy-box depth back to Dec 2024). Amazon marketplaces only, API "
-                        "key required (free key works). History charge +0.5 once per call, "
-                        "shared with offer_history."
+                        "(US buy-box depth back to Dec 2024). Amazon marketplaces only; needs "
+                        "a paid-plan API key (from $19/mo). History charge +0.5 once per "
+                        "call, shared with bsr_history."
                     ),
                 },
                 "history_sellers": {
@@ -212,8 +212,9 @@ TOOLS = [
                     "description": (
                         "Attach the full per-category BSR rank history (era-tagged daily "
                         "points back to Oct 2023 for US; legacy top-100 segments are flagged "
-                        "censored). Amazon marketplaces only, API key required (free key "
-                        "works). History charge +0.5 once per call, shared with bsr_history."
+                        "censored). Amazon marketplaces only; needs a paid-plan API key (from "
+                        "$19/mo). History charge +0.5 once per call, shared with "
+                        "offer_history."
                     ),
                 },
             },
@@ -1202,8 +1203,8 @@ TOOLS = [
 POINTER = (
     "This is the introspection stub. The live server is hosted at "
     f"{HOSTED} — add it to your MCP client as a remote (Streamable HTTP) "
-    "connector. Free, no signup: 30 queries/day. Unlimited + live scrapes: "
-    "free API key with 2,500 credits at https://api.logimu.com"
+    "connector. Free, no signup: 30 queries/day. Unlimited use, full history and "
+    "live scrapes: a paid-plan API key (from $19/month) at https://api.logimu.com"
 )
 
 
