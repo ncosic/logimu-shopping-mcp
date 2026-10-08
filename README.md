@@ -2,7 +2,7 @@
 
 **Give Claude, ChatGPT, and any MCP client real shopping data.**
 
-AI assistants are great at comparing products — and terrible at knowing today's price, what's actually in stock, and which "bestseller" is a relabeled generic. This MCP connector fixes that: your assistant gets **observed Amazon (US, UK, DE, CA, AU) and Walmart data** — current prices, live stock, real ratings, price/BSR history, and ranked product shortlists — from a continuously refreshed warehouse of 17M+ tracked products.
+AI assistants are great at comparing products — and terrible at knowing today's price, what's actually in stock, and which "bestseller" is a relabeled generic. This MCP connector fixes that: your assistant gets **observed Amazon (US, UK, DE, CA, AU, FR, IT, ES, JP, MX, BR) and Walmart US data** — current prices, live stock, real ratings, price/BSR history, and ranked product shortlists — from a continuously refreshed warehouse of 17M+ tracked products.
 
 **Free, no signup: 30 queries per day.**
 
