@@ -68,7 +68,7 @@ logimu-mcp-stub   # stdio MCP: initialize / tools/list work; tools/call points t
 - Product page: [logimu.com/shopping-mcp](https://www.logimu.com/shopping-mcp/)
 - API console & plans: [api.logimu.com](https://api.logimu.com)
 - Docs: [api.logimu.com/docs](https://api.logimu.com/docs)
-- Privacy: [api.logimu.com/privacy](https://api.logimu.com/privacy) · Terms: [api.logimu.com/terms](https://api.logimu.com/terms)
+- Privacy: [logimu.com/privacy-policy](https://www.logimu.com/privacy-policy/) · Terms: [logimu.com/terms](https://www.logimu.com/terms/) · Refunds: [logimu.com/refund-policy](https://www.logimu.com/refund-policy/)
 - Support: support@logimu.com
 
 ---
