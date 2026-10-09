@@ -924,6 +924,78 @@ TOOLS = [
         },
     },
     {
+        "name": "bestsellers",
+        "description": (
+            "LIVE Amazon Best Sellers list for one category: up to 100 products in Amazon's rank "
+            "order, the category's full breadcrumb name, and its subcategories with their URLs. "
+            "Given a marketplace's root best-sellers URL (or just a country) it returns the "
+            "top-level categories instead, so you can walk the tree: root -> category -> "
+            "subcategory, always by the URLs a previous answer returned. USE WHEN the user asks "
+            "what sells best in a category or department right now, wants a top-100 or "
+            "best-seller list, or wants to browse Amazon's best-seller categories. DON'T USE for "
+            "a keyword search (serp is Amazon's live results page, shopping a curated shortlist), "
+            "for one known ASIN (product), or for a product's rank history (product with "
+            "bsr_history). RETURNS page_type 'category': current_category (name, full_name = the "
+            "breadcrumb path, path[] with each ancestor's name/url/node_id, node_id, url), "
+            "subcategories[] (name, url, node_id), bestsellers[] (rank, asin, title, link, image, "
+            "rating, ratings_total, price) and pagination; page_type 'root': categories[] (name, "
+            "url, node_id). Every answer carries observed_at (when the list was fetched from "
+            "Amazon) and cached. HONESTY: names are in the page's language (German pages are "
+            "local; fr, it, es, jp, mx and br pages are requested in English); ranks are Amazon's "
+            "at fetch time; price is null when the card shows none; node_id is null for "
+            "departments whose URL carries only a slug. LATENCY is SECONDS: ~15-35s for a fresh "
+            "top 100, ~15s for a root list; Amazon refreshes these lists hourly, so an answer may "
+            "come from our cache (up to 30 min for a category, 24 h for the root list) and then "
+            "returns in milliseconds. MARKETPLACES us, uk, de, ca, au, fr, it, es, jp, mx, br (the "
+            "marketplace comes from the URL; no Walmart). COST API key required (the free "
+            "no-signup lane cannot run live fetches). 1 credit per page of 50 products returned "
+            "(the full top 100 = 2), cached or fresh; the root list is free; a category Amazon "
+            "does not have, a blocked fetch and an empty list are never billed."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "url": {
+                    "type": "string",
+                    "description": (
+                        "An Amazon Best Sellers URL: a category (e.g. "
+                        "https://www.amazon.com/gp/bestsellers/kitchen/289814, or any URL from a "
+                        "previous answer's subcategories / categories / path) or a marketplace's "
+                        "root (https://www.amazon.de/gp/bestsellers/). The marketplace comes from "
+                        "the host."
+                    ),
+                },
+                "country": {
+                    "type": "string",
+                    "enum": ["us", "uk", "de", "ca", "au", "fr", "it", "es", "jp", "mx", "br"],
+                    "description": (
+                        "Without url: that marketplace's root list of top-level categories (start "
+                        "here when you have no URL yet). With url: must match the URL's "
+                        "marketplace."
+                    ),
+                },
+                "pages": {
+                    "type": "integer",
+                    "default": 2,
+                    "minimum": 1,
+                    "maximum": 2,
+                    "description": (
+                        "1 = ranks 1-50 (1 credit), 2 = ranks 1-100 (default, 2 credits). Ignored "
+                        "for the root list."
+                    ),
+                },
+            },
+            "anyOf": [{"required": ["url"]}, {"required": ["country"]}],
+        },
+        "annotations": {
+            "title": "Amazon Best Sellers (live)",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+    },
+    {
         "name": "brand",
         "description": (
             "Amazon BRAND dossier from Logimu's own buy-box observations (derived "
