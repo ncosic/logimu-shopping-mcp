@@ -16,7 +16,7 @@ HOSTED = "https://api.logimu.com/mcp"
 SERVER_INFO = {
     "name": "Logimu",
     "title": "Logimu — Amazon & Walmart Shopping Data",
-    "version": "1.5.0",
+    "version": "1.5.1",
     "websiteUrl": "https://api.logimu.com",
 }
 
@@ -54,8 +54,13 @@ TOOLS = [
             "ratings_gained_30d/90d), and variation_coverage (the variation matrix as last "
             "seen with, per child, whether we track it and its latest 30-day price - current "
             "state, not history). With offer_history=true every per-seller point also carries "
-            "that day's shipping cost, fba and prime. Amazon answers also carry the observed "
-            "product-page content, the byline (authors[] with role_norm "
+            "that day's shipping cost, fba and prime, and the answer carries "
+            "buybox_price_history (2026-10-09): the lowest buy-box price of every observed "
+            "day, oldest first, each point labelled source offers (our offer observations, "
+            "every Amazon marketplace, from 2026-04-17) or daily_snapshot (the legacy daily "
+            "snapshot, Amazon US back to Nov 2023) - the deepest price series we hold; a gap "
+            "between two dates is a stretch we did not observe. Amazon answers also carry the "
+            "observed product-page content, the byline (authors[] with role_norm "
             "author/narrator/illustrator/editor/translator + author for books, audiobooks, "
             "music; 2026-09-29), the book/media format (format, format_norm, and formats[]: "
             "every format of the book, each its own ASIN with price and membership "
@@ -178,9 +183,10 @@ TOOLS = [
                     "default": False,
                     "description": (
                         "Attach the buy-box owner timeline and per-seller daily price series "
-                        "(US buy-box depth back to Dec 2024). Amazon marketplaces only; needs "
-                        "a paid-plan API key (from $19/mo). History charge +0.5 once per "
-                        "call, shared with bsr_history."
+                        "(US buy-box depth back to Dec 2024) plus buybox_price_history, the "
+                        "lowest buy-box price of every observed day (Amazon US back to Nov "
+                        "2023). Amazon marketplaces only; needs a paid-plan API key (from "
+                        "$19/mo). History charge +0.5 once per call, shared with bsr_history."
                     ),
                 },
                 "history_sellers": {
