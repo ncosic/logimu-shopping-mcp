@@ -16,7 +16,7 @@ HOSTED = "https://api.logimu.com/mcp"
 SERVER_INFO = {
     "name": "Logimu",
     "title": "Logimu — Amazon & Walmart Shopping Data",
-    "version": "1.5.1",
+    "version": "1.6.0",
     "websiteUrl": "https://api.logimu.com",
 }
 
@@ -82,17 +82,17 @@ TOOLS = [
             "scrape on Walmart). COST free lane 1 of 30 daily queries, cache only, and "
             "returns the snapshot + 30-day views (the full history streams, bsr_history, "
             "offer_history and live scrapes need an API key (plans from $19/mo) — the "
-            "response's locked block lists exactly what a key unlocks). Keyed (2026-09-27): "
-            "0.5 credits from cache with everything included, 1 for a live scrape, +0.5 ONCE "
-            "for history when bsr_history and/or offer_history come back (one charge for "
-            "both). Misses and partial scrapes are never billed; a miss may return a hint "
-            "(found on another marketplace, or retry with mode=live). SELLER FEEDBACK "
-            "(2026-09-18): every response carries seller_ratings - one entry per seller the "
-            "answer names (current offers, cheapest new/used, buy-box holder and, with "
-            "offer_history, every historical seller) with seller_positive_pct, "
-            "seller_feedback_count, seller_rating and observed_at from a nightly "
-            "seller-feedback table; offer_history.sellers[] rows carry the same fields "
-            "directly. Amazon's own offers have no feedback. Not billed."
+            "response's locked block lists exactly what a key unlocks). Keyed: 0.5 credits "
+            "from cache with everything included - bsr_history and offer_history too, no "
+            "extra charge since 2026-10-10 - and 1 for a live scrape; history_only=true "
+            "returns just the history series for 0.1 credit. Misses and partial scrapes are "
+            "never billed; a miss may return a hint (found on another marketplace, or retry "
+            "with mode=live). SELLER FEEDBACK (2026-09-18): every response carries "
+            "seller_ratings - one entry per seller the answer names (current offers, cheapest "
+            "new/used, buy-box holder and, with offer_history, every historical seller) with "
+            "seller_positive_pct, seller_feedback_count, seller_rating and observed_at from a "
+            "nightly seller-feedback table; offer_history.sellers[] rows carry the same "
+            "fields directly. Amazon's own offers have no feedback. Not billed."
         ),
         "inputSchema": {
             "type": "object",
@@ -186,7 +186,7 @@ TOOLS = [
                         "(US buy-box depth back to Dec 2024) plus buybox_price_history, the "
                         "lowest buy-box price of every observed day (Amazon US back to Nov "
                         "2023). Amazon marketplaces only; needs a paid-plan API key (from "
-                        "$19/mo). History charge +0.5 once per call, shared with bsr_history."
+                        "$19/mo). Included in the record, no extra credits."
                     ),
                 },
                 "history_sellers": {
@@ -207,9 +207,9 @@ TOOLS = [
                     "maximum": 20000,
                     "description": (
                         "With offer_history: points per series, the most recent N observed "
-                        "days (default 500, max 20,000). The default 10 x 500 is inside the "
-                        "+0.5; beyond it 0.5 credit per started 1,000 points "
-                        "(offer_history.extra_credits)."
+                        "days (default 500, max 20,000). Wider series are included too, no "
+                        "extra credits (offer_history.points_extra still reports the points "
+                        "beyond the default 10 x 500)."
                     ),
                 },
                 "bsr_history": {
@@ -219,8 +219,19 @@ TOOLS = [
                         "Attach the full per-category BSR rank history (era-tagged daily "
                         "points back to Oct 2023 for US; legacy top-100 segments are flagged "
                         "censored). Amazon marketplaces only; needs a paid-plan API key (from "
-                        "$19/mo). History charge +0.5 once per call, shared with "
-                        "offer_history."
+                        "$19/mo). Included in the record, no extra credits."
+                    ),
+                },
+                "history_only": {
+                    "type": "boolean",
+                    "default": False,
+                    "description": (
+                        "Return ONLY the stored history series - bsr_history, offer_history "
+                        "and buybox_price_history - with no snapshot, content or seller "
+                        "table, for 0.1 credit. USE WHEN the user tracks price or rank over "
+                        "time for many products and does not need the current listing. Amazon "
+                        "marketplaces only, served from stored observations (mode=live is "
+                        "refused); needs a paid-plan API key (from $19/mo)."
                     ),
                 },
             },
