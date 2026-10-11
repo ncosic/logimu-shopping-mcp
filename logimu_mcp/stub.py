@@ -16,7 +16,7 @@ HOSTED = "https://api.logimu.com/mcp"
 SERVER_INFO = {
     "name": "Logimu",
     "title": "Logimu — Amazon & Walmart Shopping Data",
-    "version": "1.6.0",
+    "version": "1.6.1",
     "websiteUrl": "https://api.logimu.com",
 }
 
@@ -85,7 +85,7 @@ TOOLS = [
             "response's locked block lists exactly what a key unlocks). Keyed: 0.5 credits "
             "from cache with everything included - bsr_history and offer_history too, no "
             "extra charge since 2026-10-10 - and 1 for a live scrape; history_only=true "
-            "returns just the history series for 0.1 credit. Misses and partial scrapes are "
+            "returns just the history series for 0.05 credit. Misses and partial scrapes are "
             "never billed; a miss may return a hint (found on another marketplace, or retry "
             "with mode=live). SELLER FEEDBACK (2026-09-18): every response carries "
             "seller_ratings - one entry per seller the answer names (current offers, cheapest "
@@ -228,7 +228,7 @@ TOOLS = [
                     "description": (
                         "Return ONLY the stored history series - bsr_history, offer_history "
                         "and buybox_price_history - with no snapshot, content or seller "
-                        "table, for 0.1 credit. USE WHEN the user tracks price or rank over "
+                        "table, for 0.05 credit. USE WHEN the user tracks price or rank over "
                         "time for many products and does not need the current listing. Amazon "
                         "marketplaces only, served from stored observations (mode=live is "
                         "refused); needs a paid-plan API key (from $19/mo)."

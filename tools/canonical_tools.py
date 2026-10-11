@@ -43,6 +43,8 @@ say so. Costs: seller -> seller_credits.py (profile 0.5 cache / 1 live, +0.5 his
 
 2026-10-10 (B143, 1.6.0): product history included in the record (bsr_history / offer_history no longer +0.5,
 wider series free too) and the history_only flag (the series alone, 0.1 credit, warehouse only).
+
+2026-10-11 (1.6.1): history_only at 0.05 credit (the B143 W4 load test held all four thresholds).
 """
 
 TOOLS = [
@@ -106,7 +108,7 @@ TOOLS = [
             "response's locked block lists exactly what a key unlocks). Keyed: 0.5 credits "
             "from cache with everything included - bsr_history and offer_history too, no extra "
             "charge since 2026-10-10 - and 1 for a live scrape; history_only=true returns just "
-            "the history series for 0.1 credit. Misses and partial scrapes are never billed; a miss may return a hint "
+            "the history series for 0.05 credit. Misses and partial scrapes are never billed; a miss may return a hint "
             "(found on another marketplace, or retry with mode=live). SELLER FEEDBACK "
             "(2026-09-18): every response carries seller_ratings - one entry per seller the "
             "answer names (current offers, cheapest new/used, buy-box holder and, with "
@@ -250,7 +252,7 @@ TOOLS = [
                     "description": (
                         "Return ONLY the stored history series - bsr_history, offer_history "
                         "and buybox_price_history - with no snapshot, content or seller table, "
-                        "for 0.1 credit. USE WHEN the user tracks price or rank over time for "
+                        "for 0.05 credit. USE WHEN the user tracks price or rank over time for "
                         "many products and does not need the current listing. Amazon "
                         "marketplaces only, served from stored observations (mode=live is "
                         "refused); needs a paid-plan API key (from $19/mo)."
