@@ -33,6 +33,7 @@ Then ask things like:
 | `search` | Filtered structured lists — price/rating/review/BSR/FBA filters, sorting | Up to 25 rows on the free lane, across all 11 Amazon marketplaces plus Walmart US | Free: 1 of 30 daily |
 | `serp` | The live Amazon search-results page for a query, right now | Organic grid, sponsored and video blocks, refinements, pagination — a real fetch, seconds | API key: 1 credit per page fetched |
 | `bestsellers` | What sells best in a category right now; Amazon's best-seller category tree | Up to 100 products in Amazon's rank order, the category's breadcrumb name and its subcategories; a root URL or a country alone returns the top-level categories. A real fetch (seconds), cached up to 30 min | API key: 1 credit per page of 50 (top 100 = 2), root list free |
+| `offers` | Who sells a product right now, at what price; the cheapest new or used offer; the buy-box winner this minute | Every offer on Amazon's offers page (every page): seller and seller id, price, shipping, condition, buy box, FBA / FBM / Amazon, Prime, delivery promise and the seller's feedback, by ASIN or barcode. A real fetch (seconds); a no-offers answer is confirmed by a second, independent fetch | API key: 0.5 credit when an offer is listed; no offers, a miss or a failed fetch free |
 | `seller` | A seller id — rating and feedback history, the storefront, the brands it was observed winning the buy box on, connected sellers | Stored profile (0.5) or live (1), +0.5 history; storefront pages 1 each; `brands` / `network` blocks +1 | Paid plan |
 | `brand` | Who sells a brand, how contested / Amazon-dominated / FBA-heavy it is, its seller map | Brand dossier from observed buy-box data (1), +0.5 history, +1 per sellers page, +1 for the network of brands sharing sellers | Paid plan |
 | `category` | How big / competitive / Amazon-dominated a category is, which brands lead it | Category landscape by id (1, +0.5 history); the name lookup is free | Paid plan |
@@ -48,7 +49,7 @@ Full REST API reference (same engine, same data): [api.logimu.com/docs](https://
 | | Free (no signup) | Paid plan (API key) |
 |---|---|---|
 | Queries | 30 / day | Credit-metered — subscriptions from $19/month, one-time credit packs, unconditional 14-day money-back |
-| Data | Warehouse `shopping` / `product` / `search`, cached (fresh, timestamped) | + `mode=live` on-demand fetches, `serp`, `bestsellers`, seller profiles, brand / category intelligence and market lists, batch jobs on the REST API |
+| Data | Warehouse `shopping` / `product` / `search`, cached (fresh, timestamped) | + `mode=live` on-demand fetches, `serp`, `bestsellers`, `offers`, seller profiles, brand / category intelligence and market lists, batch jobs on the REST API |
 | Signup | None | [api.logimu.com](https://api.logimu.com) |
 
 - Every record carries an `observed_at` timestamp — data is **observed** from our warehouse, not a live retailer feed.
