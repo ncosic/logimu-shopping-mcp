@@ -1021,6 +1021,85 @@ TOOLS = [
         },
     },
     {
+        "name": "offers",
+        "description": (
+            "LIVE Amazon offers page for one product: every seller offering it right now, read "
+            "from Amazon's 'All offers' view at request time, every page of it (up to 10). Each offer has "
+            "the seller and seller_id, price, shipping_cost, condition, buy box, FBA / FBM / "
+            "Amazon, Prime, ships-from, the delivery promise and the seller's feedback record; "
+            "the answer adds the buy box and the page's own header (title, image, rating, review "
+            "count). No product page is fetched. USE WHEN the user asks who sells a product right "
+            "now, wants every current offer, the cheapest new or used offer or the buy-box winner "
+            "as of this minute, or needs a fresh seller list before buying, sourcing or "
+            "repricing. DON'T USE for brand, BSR, listing content, reviews or price / offer "
+            "history (product), for a keyword search (shopping, serp) or for a brand's or a "
+            "seller's long-run buy-box record (brand, seller). RETURNS asin, marketplace, "
+            "observed_at, title, image_url, rating, reviews_count, currency, price (the buy box), "
+            "buybox_seller, buybox_seller_id, seller_count, no_sellers, pages_fetched, "
+            "current_sellers (sellers[] buy box first, then price ascending: seller, seller_id, "
+            "price, shipping_cost, condition, condition_class, is_buybox, is_fba, is_prime, "
+            "fulfillment, ships_from, delivery, seller_rating, plus buybox_days_30d and the 30-day "
+            "buy-box shares from our observations; offer_count, used_offer_count, lowest_new, "
+            "lowest_used), fulfillment (offer counts by AMZ / FBA / FBM, whether Amazon sells or "
+            "holds the buy box) and seller_ratings; with gtin also gtin_resolution (source, "
+            "confidence, barcode_verified). HONESTY: no_sellers=true means Amazon lists no offer "
+            "for the product right now, an answer confirmed by a second, independent fetch before "
+            "it is served; a fetch that fails is reported as an error, never as no sellers. "
+            "LATENCY is SECONDS: typically 4-12s (one page ~4s; a long list walks every page). "
+            "MARKETPLACES us, uk, de, ca, au, fr, it, es, jp, mx, br (no Walmart). COST API key "
+            "required (the free no-signup lane cannot run live fetches). 0.5 credit when the "
+            "answer carries at least one offer; a no-offers answer, an ASIN Amazon does not have, "
+            "a barcode nothing resolves and a failed or busy fetch are never billed."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "asin": {
+                    "type": "string",
+                    "description": (
+                        "The product's 10-character Amazon ASIN (a print book's ISBN-10 works "
+                        "too). Provide asin or gtin."
+                    ),
+                },
+                "gtin": {
+                    "type": "string",
+                    "description": (
+                        "A barcode instead of an ASIN: UPC-12, EAN-13, GTIN-14 or ISBN-13. "
+                        "Resolved cheapest evidence first: a listing we observe that carries it, "
+                        "a book's ISBN-10, the same product on another Amazon marketplace, then "
+                        "Amazon's own search (organic results only). gtin_resolution says which, "
+                        "and barcode_verified whether the listing itself carries the barcode. A "
+                        "barcode nothing resolves is never billed."
+                    ),
+                },
+                "country": {
+                    "type": "string",
+                    "enum": ["us", "uk", "de", "ca", "au", "fr", "it", "es", "jp", "mx", "br"],
+                    "default": "us",
+                    "description": "The Amazon marketplace to read the offers page on.",
+                },
+                "include_used": {
+                    "type": "boolean",
+                    "default": False,
+                    "description": (
+                        "true also lists the used, refurbished, open-box and collectible offers "
+                        "in current_sellers.sellers. Either way current_sellers carries "
+                        "used_offer_count, lowest_new and lowest_used, and every row its "
+                        "condition. Not billed extra."
+                    ),
+                },
+            },
+            "anyOf": [{"required": ["asin"]}, {"required": ["gtin"]}],
+        },
+        "annotations": {
+            "title": "Amazon Offers (live)",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+    },
+    {
         "name": "brand",
         "description": (
             "Amazon BRAND dossier from Logimu's own buy-box observations (derived "
