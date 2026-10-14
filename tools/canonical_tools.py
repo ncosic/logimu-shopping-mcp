@@ -1403,12 +1403,24 @@ TOOLS = [
             "granted (granted_interval). RETURNS id, asin, country, status (active / paused / expired / "
             "stopped), interval, granted_interval, requested_interval, snapshots_per_day, expires_at, in_lane, "
             "last_snapshot_at, next_due_at, pending (true until the lane picks it up, within ~10 minutes), "
-            "allowance (plan, snapshots_per_day, used, remaining). Paid plans only (the allowance belongs to a "
-            "subscription). MARKETPLACES us, uk, de, ca, au, fr, it, es, jp, mx, br (no Walmart)."
+            "allowance (plan, snapshots_per_day, used, remaining). action=stop ends a tracking at once (by id "
+            "from list_tracked, or by asin + country) and releases its allowance; the row stays listed 30 days as "
+            "stopped. Paid plans only (the allowance belongs to a subscription). MARKETPLACES us, uk, de, ca, au, "
+            "fr, it, es, jp, mx, br (no Walmart)."
         ),
         "inputSchema": {
             "type": "object",
             "properties": {
+                "action": {
+                    "type": "string",
+                    "enum": ["track", "stop"],
+                    "default": "track",
+                    "description": "track (default) creates or renews the tracking; stop ends it at once.",
+                },
+                "id": {
+                    "type": "integer",
+                    "description": "With action=stop: the tracking id (from list_tracked). Or give asin + country.",
+                },
                 "asin": {
                     "type": "string",
                     "description": "The product's 10-character Amazon ASIN.",
@@ -1486,6 +1498,118 @@ TOOLS = [
         },
         "annotations": {
             "title": "Tracked products",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False,
+        },
+    },
+    {
+        "name": "batch",
+        "description": (
+            "BATCHES: run any Logimu endpoint over a whole list in one job and come back for the results - the "
+            "same batch API as REST /v1/batches (see https://api.logimu.com/docs#batch). action=estimate prices "
+            "a list before anything is billed (free); action=create makes a named, re-runnable batch (add "
+            "start=true to launch its first run at once); action=run launches a run of an existing batch; "
+            "action=status reports a batch (runs, line stats) or, with run_id, one run's progress (rows done, "
+            "credits so far, queue position); action=results returns completed result rows of a run, mid-run "
+            "too (limit / offset to page; jsonl_url and csv_url give the full download); action=list lists the "
+            "key's batches; action=schedule repeats a batch daily / weekly / monthly (credit_ceiling, "
+            "webhook_url); action=delete removes a batch. USE WHEN the user has more than a handful of ASINs, "
+            "barcodes, search terms, seller ids, brands or seeds to run, wants a daily/weekly refresh, or wants a "
+            "CSV. Kinds: product (asins or gtins - or source=tracked for the ASINs this key tracks, typically "
+            "with include [history_only] at 0.05 a row), search (terms, live SERP), seller / brand / category / "
+            "keywords (paid plans), and every other endpoint as its own kind (shopping, warehouse_search, "
+            "bestsellers, seller_products, seller_brands, seller_network, brand_sellers, brand_network, "
+            "keywords_compare, categories, category_search, brands_top, brands_movers, sellers_top, "
+            "sellers_movers, categories_top) with the endpoint's query parameters in params. Each row bills what "
+            "the endpoint bills; failed, not-found and duplicate rows are never billed; runs are serialized per "
+            "marketplace. COST estimate / status / results / list are free; create + run queue billable rows "
+            "(the estimate is the ceiling). API key required (keyed lanes)."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string",
+                    "enum": ["estimate", "create", "run", "status", "results", "list", "schedule", "delete"],
+                    "description": "What to do (see the tool description).",
+                },
+                "batch_id": {"type": "integer", "description": "For run / status / results / schedule / delete."},
+                "run_id": {"type": "integer", "description": "For status (one run's progress) and results."},
+                "name": {"type": "string", "description": "create: the batch's name (1-120 characters)."},
+                "kind": {
+                    "type": "string",
+                    "default": "product",
+                    "description": "estimate / create: product (default), search, seller, brand, category, keywords, or any endpoint kind named in the description.",
+                },
+                "country": {
+                    "type": "string",
+                    "default": "us",
+                    "description": "estimate / create: us, uk, de, ca, au, fr, it, es, jp, mx, br, walmart (search batches Amazon only).",
+                },
+                "mode": {
+                    "type": "string",
+                    "enum": ["cache", "live", "auto"],
+                    "description": "product / seller batches: cache = warehouse only, live = scrape every row, auto = warehouse when fresh enough (required on create for product batches).",
+                },
+                "max_age_days": {"type": "integer", "minimum": 1, "maximum": 365, "default": 30},
+                "asins": {"type": "array", "items": {"type": "string"}, "description": "product batches: the ASINs (or Walmart item ids)."},
+                "gtins": {"type": "array", "items": {"type": "string"}, "description": "product batches: barcodes instead of ASINs."},
+                "source": {
+                    "type": "string",
+                    "enum": ["tracked"],
+                    "description": "product batches: tracked = the ASINs this key tracks on the marketplace instead of a list.",
+                },
+                "terms": {"type": "array", "items": {"type": "string"}, "description": "search / shopping / warehouse_search / category_search batches: the queries."},
+                "seller_ids": {"type": "array", "items": {"type": "string"}, "description": "seller, seller_products, seller_brands, seller_network batches."},
+                "brands": {"type": "array", "items": {"type": "string"}, "description": "brand, brand_sellers, brand_network batches."},
+                "category_ids": {"type": "array", "items": {"type": "string"}, "description": "category / categories batches (ids, or root)."},
+                "seeds": {"type": "array", "items": {"type": "string"}, "description": "keywords / keywords_compare batches: seed terms."},
+                "urls": {"type": "array", "items": {"type": "string"}, "description": "bestsellers batches: Best Sellers URLs."},
+                "pages": {"type": "integer", "minimum": 1, "maximum": 40, "description": "search batches: pages per term (1-3); ranked-list batches: pages of 25 rows (1-40)."},
+                "params": {"type": "object", "description": "endpoint kinds: the endpoint's query parameters, fixed for every row."},
+                "include": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Extras: history (seller / brand / category / keywords), reviews, used, offer_history, bsr_history, history_only (product), blocks (search).",
+                },
+                "history_sellers": {"type": "integer", "minimum": 1, "maximum": 50, "default": 10},
+                "history_points": {"type": "integer", "minimum": 1, "maximum": 20000, "default": 500},
+                "start": {"type": "boolean", "default": False, "description": "create: also launch the first run at once."},
+                "schedule": {
+                    "type": "string",
+                    "enum": ["none", "daily", "weekly", "monthly"],
+                    "description": "schedule: how often the batch re-runs (none stops the schedule).",
+                },
+                "schedule_enabled": {"type": "boolean", "default": True, "description": "schedule: pause without deleting."},
+                "credit_ceiling": {"type": "number", "description": "schedule: a firing whose fresh estimate exceeds this does not run (email instead); default 2x the estimate."},
+                "webhook_url": {"type": "string", "description": "schedule: POSTed on run completion / pause, HMAC-SHA256 signed; the secret is returned once."},
+                "limit": {"type": "integer", "minimum": 1, "maximum": 200, "default": 50, "description": "results: rows to return (page with offset; the download URLs carry everything)."},
+                "offset": {"type": "integer", "minimum": 0, "default": 0, "description": "results: rows to skip."},
+            },
+            "required": ["action"],
+        },
+        "annotations": {
+            "title": "Batches (bulk and scheduled runs)",
+            "readOnlyHint": False,
+            "destructiveHint": True,
+            "idempotentHint": False,
+            "openWorldHint": False,
+        },
+    },
+    {
+        "name": "account",
+        "description": (
+            "ACCOUNT: the calling key's balance, plan, 30-day usage by endpoint and its product-tracking allowance "
+            "(snapshots a day: total, used, remaining) - the same as REST GET /v1/account. USE WHEN the user asks "
+            "how many credits are left, what a job will leave, what the key has been used for, or how much "
+            "tracking room there is. COST free, never billed. API key required (keyed lanes); without one, nothing "
+            "to report."
+        ),
+        "inputSchema": {"type": "object", "properties": {}},
+        "annotations": {
+            "title": "Account balance and usage",
             "readOnlyHint": True,
             "destructiveHint": False,
             "idempotentHint": True,
