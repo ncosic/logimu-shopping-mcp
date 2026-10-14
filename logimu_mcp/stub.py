@@ -240,6 +240,27 @@ TOOLS = [
                         "refused); needs a paid-plan API key (from $19/mo)."
                     ),
                 },
+                "track": {
+                    "type": "boolean",
+                    "default": False,
+                    "description": (
+                        "Answer AND track (paid plans): after this answer the ASIN is pinned "
+                        "into our hot lane, which re-reads its all-offers page every "
+                        "`interval` for 30 days and adds every read to "
+                        "buybox_price_points_hot - the same as the track_product tool. No "
+                        "extra credits (the plan's daily tracked-snapshot allowance is "
+                        "drawn); the answer is served even when the tracking is refused and "
+                        "its `track` block says why. Amazon only."
+                    ),
+                },
+                "interval": {
+                    "type": "string",
+                    "enum": ["2h", "4h", "12h", "24h"],
+                    "default": "4h",
+                    "description": (
+                        "With track=true: how often the lane re-reads the all-offers page."
+                    ),
+                },
             },
             "required": ["asin"],
         },
@@ -1385,6 +1406,122 @@ TOOLS = [
         },
         "annotations": {
             "title": "Keyword suggestions (observed)",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False,
+        },
+    },
+    {
+        "name": "track_product",
+        "description": (
+            "TRACK a product: pin an Amazon ASIN into our hot lane so its all-offers page is "
+            "re-read every 2, 4, 12 or 24 hours for up to 90 days, and every read lands in "
+            "the product's history as a sub-daily buy-box point (price, buy-box seller, "
+            "fulfillment, offer count - buybox_price_points_hot on the product tool). USE "
+            "WHEN the user wants to watch a product's price, buy box or seller count more "
+            "often than our normal cadence: repricing, MAP and buy-box monitoring, a "
+            "competitor's listing, a launch, a deal. Posting the same ASIN again renews it "
+            "and changes its interval. DON'T USE to read data (product, offers): tracking "
+            "only schedules the reads. COST 0 credits: what a plan sells is a daily allowance "
+            "of tracked snapshots (Solo 2,500 a day = 416 products every 4 hours, Starter "
+            "6,000, Growth 18,000, Standard 40,000, Scale 170,000, Volume 710,000); when the "
+            "allowance is spent the answer says so with the upgrade link, and when only a "
+            "longer interval fits it is granted (granted_interval). RETURNS id, asin, "
+            "country, status (active / paused / expired / stopped), interval, "
+            "granted_interval, requested_interval, snapshots_per_day, expires_at, in_lane, "
+            "last_snapshot_at, next_due_at, pending (true until the lane picks it up, within "
+            "~10 minutes), allowance (plan, snapshots_per_day, used, remaining). Paid plans "
+            "only (the allowance belongs to a subscription). MARKETPLACES us, uk, de, ca, au, "
+            "fr, it, es, jp, mx, br (no Walmart)."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "asin": {
+                    "type": "string",
+                    "description": "The product's 10-character Amazon ASIN.",
+                },
+                "country": {
+                    "type": "string",
+                    "enum": ["us", "uk", "de", "ca", "au", "fr", "it", "es", "jp", "mx", "br"],
+                    "default": "us",
+                    "description": "The Amazon marketplace to track the product on.",
+                },
+                "interval": {
+                    "type": "string",
+                    "enum": ["2h", "4h", "12h", "24h"],
+                    "default": "4h",
+                    "description": (
+                        "How often the lane re-reads the all-offers page. A shorter interval "
+                        "costs more of the daily allowance (2h = 12 snapshots a day, 4h = 6, "
+                        "12h = 2, 24h = 1)."
+                    ),
+                },
+                "ttl_days": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 90,
+                    "default": 30,
+                    "description": (
+                        "How many days to keep tracking (1-90, default 30); post again to "
+                        "renew."
+                    ),
+                },
+            },
+            "required": ["asin"],
+        },
+        "annotations": {
+            "title": "Track a product (hot lane)",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False,
+        },
+    },
+    {
+        "name": "list_tracked",
+        "description": (
+            "LIST the products this API key tracks (track_product): each with its status, "
+            "interval, expiry, whether the hot lane has picked it up, the lane's last and "
+            "next read, plus the plan's tracking allowance (snapshots a day: total, used, "
+            "remaining). USE WHEN the user asks what is being tracked, whether a tracking is "
+            "live, how much allowance is left, or wants to stop one (the id goes to DELETE "
+            "/v1/track/{id} on the REST API). Stopped trackings stay listed for 30 days. COST "
+            "0 credits. Paid plans only."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "country": {
+                    "type": "string",
+                    "enum": ["us", "uk", "de", "ca", "au", "fr", "it", "es", "jp", "mx", "br"],
+                    "description": (
+                        "Only this marketplace's trackings (default: every marketplace)."
+                    ),
+                },
+                "status": {
+                    "type": "string",
+                    "enum": ["active", "paused", "expired", "stopped"],
+                    "description": "Only trackings in this state (default: all, newest first).",
+                },
+                "limit": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 1000,
+                    "default": 200,
+                    "description": "Maximum rows to return.",
+                },
+                "offset": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "default": 0,
+                    "description": "Rows to skip (paging; total says how many there are).",
+                },
+            },
+        },
+        "annotations": {
+            "title": "Tracked products",
             "readOnlyHint": True,
             "destructiveHint": False,
             "idempotentHint": True,
