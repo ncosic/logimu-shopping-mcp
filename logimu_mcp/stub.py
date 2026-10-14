@@ -1486,6 +1486,34 @@ TOOLS = [
                         "renew."
                     ),
                 },
+                "webhook_url": {
+                    "type": "string",
+                    "description": (
+                        "Optional: an https URL Logimu POSTs to when a notify_if threshold "
+                        "fires on a new observation (signed X-Logimu-Signature: "
+                        "sha256=HMAC-SHA256(secret, body); the secret is returned once in "
+                        "webhook_secret). An empty string detaches it."
+                    ),
+                },
+                "notify_if": {
+                    "type": "object",
+                    "description": (
+                        "With webhook_url: the thresholds. price_below / price_above (a "
+                        "price), price_change_pct (percent move since the previous "
+                        "observation), buybox_seller_change (true), offer_count_below / "
+                        "offer_count_above (a count), availability_change (true). {} attaches "
+                        "the webhook and fires on nothing."
+                    ),
+                    "properties": {
+                        "price_below": {"type": "number"},
+                        "price_above": {"type": "number"},
+                        "price_change_pct": {"type": "number"},
+                        "buybox_seller_change": {"type": "boolean"},
+                        "offer_count_below": {"type": "integer"},
+                        "offer_count_above": {"type": "integer"},
+                        "availability_change": {"type": "boolean"},
+                    },
+                },
             },
             "required": ["asin"],
         },
@@ -1535,6 +1563,15 @@ TOOLS = [
                     "minimum": 0,
                     "default": 0,
                     "description": "Rows to skip (paging; total says how many there are).",
+                },
+                "events_for": {
+                    "type": "integer",
+                    "description": (
+                        "A tracking id: return that tracking's webhook events instead of the "
+                        "list - which notify_if threshold fired on which observation, the "
+                        "payload, and the delivery state (pending / delivered / failed, "
+                        "attempts, last error)."
+                    ),
                 },
             },
         },
