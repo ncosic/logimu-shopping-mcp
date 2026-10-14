@@ -277,9 +277,9 @@ TOOLS = [
                 },
                 "interval": {
                     "type": "string",
-                    "enum": ["2h", "4h", "12h", "24h"],
+                    "enum": ["1h", "2h", "4h", "12h", "24h"],
                     "default": "4h",
-                    "description": "With track=true: how often the lane re-reads the all-offers page.",
+                    "description": "With track=true: how often the lane re-reads the all-offers page (1h = 24 snapshots a day).",
                 },
             },
             "required": ["asin"],
@@ -1390,8 +1390,9 @@ TOOLS = [
     {
         "name": "track_product",
         "description": (
-            "TRACK a product: pin an Amazon ASIN into our hot lane so its all-offers page is re-read every 2, 4, "
-            "12 or 24 hours for up to 90 days, and every read lands in the product's history as a sub-daily "
+            "TRACK a product: pin an Amazon ASIN into our hot lane so its all-offers page is re-read every hour "
+            "or every 2, 4, 12 or 24 hours, for as long as the plan is active (or a ttl_days you set), with e-mail "
+            "and webhook alerts on the thresholds you give; every read lands in the product's history as a sub-daily "
             "buy-box point (price, buy-box seller, fulfillment, offer count - buybox_price_points_hot on the "
             "product tool). USE WHEN the user wants to watch a product's price, buy box or seller count more "
             "often than our normal cadence: repricing, MAP and buy-box monitoring, a competitor's listing, a "
@@ -1433,19 +1434,30 @@ TOOLS = [
                 },
                 "interval": {
                     "type": "string",
-                    "enum": ["2h", "4h", "12h", "24h"],
+                    "enum": ["1h", "2h", "4h", "12h", "24h"],
                     "default": "4h",
                     "description": (
                         "How often the lane re-reads the all-offers page. A shorter interval costs more of the "
-                        "daily allowance (2h = 12 snapshots a day, 4h = 6, 12h = 2, 24h = 1)."
+                        "daily allowance (1h = 24 snapshots a day, 2h = 12, 4h = 6, 12h = 2, 24h = 1)."
                     ),
                 },
                 "ttl_days": {
                     "type": "integer",
-                    "minimum": 1,
-                    "maximum": 90,
-                    "default": 30,
-                    "description": "How many days to keep tracking (1-90, default 30); post again to renew.",
+                    "minimum": 0,
+                    "maximum": 365,
+                    "description": (
+                        "Optional: stop after this many days (1-365). Omit (or 0) and the tracking runs for as "
+                        "long as the plan is active - a lapsed plan keeps it 7 days, then it pauses and resumes "
+                        "with the plan."
+                    ),
+                },
+                "alert_email": {
+                    "type": "string",
+                    "description": (
+                        "Optional: e-mail alerts for the notify_if thresholds - 'true' for the account's own "
+                        "address, or an address. One e-mail per event, at most 50 a day per tracking. 'false' "
+                        "detaches. Works with or without webhook_url."
+                    ),
                 },
                 "webhook_url": {
                     "type": "string",
