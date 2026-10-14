@@ -1111,6 +1111,18 @@ TOOLS = [
                         "condition. Not billed extra."
                     ),
                 },
+                "zip": {
+                    "type": "string",
+                    "description": (
+                        "Optional (2026-10-14): a US 5-digit ZIP - the offers page as Amazon shows it to a "
+                        "shopper at that ZIP, with location (Amazon's confirmed 'Deliver to' answer) and "
+                        "deliverable (whether the item is offered to that ZIP right now; Amazon Fresh and Whole "
+                        "Foods items deliver only to some ZIPs, and an out-of-area ZIP shows the same unavailable "
+                        "box as a stock-out). Page 1 of the offers only, a one-off session, nothing stored. "
+                        "country=us only. 1 credit when the answer carries an offer; a ZIP Amazon rejects is "
+                        "guidance, never billed."
+                    ),
+                },
             },
             "anyOf": [{"required": ["asin"]}, {"required": ["gtin"]}],
         },
@@ -1406,25 +1418,54 @@ TOOLS = [
             "last_snapshot_at, next_due_at, pending (true until the lane picks it up, within ~10 minutes), "
             "allowance (plan, snapshots_per_day, used, remaining). action=stop ends a tracking at once (by id "
             "from list_tracked, or by asin + country) and releases its allowance; the row stays listed 30 days as "
-            "stopped. Paid plans only (the allowance belongs to a subscription). MARKETPLACES us, uk, de, ca, au, "
-            "fr, it, es, jp, mx, br (no Walmart)."
+            "stopped. BULK (2026-10-14): asins (up to 1,000) with action=track / stop, and action=sync to make the "
+            "active set equal to a list (dry_run first). STOCK STATES: every read is in_stock (a buy box), "
+            "no_buybox (offers, no featured offer) or out_of_stock (no offers, confirmed twice); "
+            "availability_change / out_of_stock / back_in_stock alert on the transitions, price alerts compare "
+            "buy-box prices only. Paid plans only (the allowance belongs to a subscription). MARKETPLACES us, "
+            "uk, de, ca, au, fr, it, es, jp, mx, br (no Walmart)."
         ),
         "inputSchema": {
             "type": "object",
             "properties": {
                 "action": {
                     "type": "string",
-                    "enum": ["track", "stop"],
+                    "enum": ["track", "stop", "sync"],
                     "default": "track",
-                    "description": "track (default) creates or renews the tracking; stop ends it at once.",
+                    "description": (
+                        "track (default) creates or renews the tracking(s); stop ends one or many at once; sync "
+                        "(2026-10-14) makes the key's active set on one marketplace EQUAL to asins: missing ones are "
+                        "created, active ones not listed are stopped, the rest are left as they are - dry_run first "
+                        "to see the counts."
+                    ),
                 },
                 "id": {
                     "type": "integer",
-                    "description": "With action=stop: the tracking id (from list_tracked). Or give asin + country.",
+                    "description": "With action=stop: the tracking id (from list_tracked). Or give asin + country, or ids / asins.",
+                },
+                "ids": {
+                    "type": "array",
+                    "items": {"type": "integer"},
+                    "description": "With action=stop: several tracking ids at once (up to 1,000).",
                 },
                 "asin": {
                     "type": "string",
-                    "description": "The product's 10-character Amazon ASIN.",
+                    "description": "The product's 10-character Amazon ASIN (one product). Or give asins.",
+                },
+                "asins": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": (
+                        "Bulk (2026-10-14): up to 1,000 ASINs in one call - with action=track all get the same "
+                        "interval / ttl_days / alerts (results[] in input order: created / renewed / refused / "
+                        "invalid, the allowance consumed in input order, never all-or-nothing); with action=stop "
+                        "they are stopped; with action=sync they are the full list the active set becomes."
+                    ),
+                },
+                "dry_run": {
+                    "type": "boolean",
+                    "default": False,
+                    "description": "With action=sync: return what would be created and stopped without writing.",
                 },
                 "country": {
                     "type": "string",
@@ -1470,10 +1511,15 @@ TOOLS = [
                 "notify_if": {
                     "type": "object",
                     "description": (
-                        "With webhook_url: the thresholds. price_below / price_above (a price), "
-                        "price_change_pct (percent move since the previous observation), "
-                        "buybox_seller_change (true), offer_count_below / offer_count_above (a count), "
-                        "availability_change (true). {} attaches the webhook and fires on nothing."
+                        "With webhook_url and / or alert_email: the thresholds. price_below / price_above (a "
+                        "buy-box price), price_change_pct (percent move of the buy-box price since the last "
+                        "in-stock read), buybox_seller_change (true: a different seller holds the buy box, "
+                        "between two in-stock reads), offer_count_below / offer_count_above (a count), "
+                        "availability_change (true: the stock STATE changed - in_stock, no_buybox = offers "
+                        "exist but Amazon shows no featured offer, out_of_stock = no offers at all, confirmed "
+                        "by a second read; the event carries both codes), out_of_stock (true: shorthand for "
+                        "a change to out_of_stock), back_in_stock (true: a change to in_stock). {} attaches "
+                        "the webhook and fires on nothing."
                     ),
                     "properties": {
                         "price_below": {"type": "number"},
@@ -1483,10 +1529,12 @@ TOOLS = [
                         "offer_count_below": {"type": "integer"},
                         "offer_count_above": {"type": "integer"},
                         "availability_change": {"type": "boolean"},
+                        "out_of_stock": {"type": "boolean"},
+                        "back_in_stock": {"type": "boolean"},
                     },
                 },
             },
-            "required": ["asin"],
+            "anyOf": [{"required": ["asin"]}, {"required": ["asins"]}, {"required": ["id"]}, {"required": ["ids"]}],
         },
         "annotations": {
             "title": "Track a product (hot lane)",
