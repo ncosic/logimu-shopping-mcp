@@ -14,8 +14,8 @@ https://api.logimu.com/mcp
 
 | Client | How |
 |---|---|
-| **Claude** (claude.ai / desktop) | Settings → Connectors → Add custom connector → paste the URL above. No key needed. |
-| **Claude Code** | `claude mcp add --transport http logimu https://api.logimu.com/mcp` |
+| **Claude** (claude.ai / desktop / mobile) | Settings → Connectors → Add custom connector → paste the URL above. Free tools work at once; the first live, paid or tracking tool shows Claude's **Connect** card — sign in with your Logimu account and every call is metered on your plan (OAuth; the connector never sees your key). |
+| **Claude Code** | `claude mcp add --transport http logimu https://api.logimu.com/mcp`, then `/mcp` to sign in when a paid tool asks — or `--header "Authorization: Bearer sk_live_…"` to pass the key directly |
 | **ChatGPT** (developer mode), Cursor, VS Code, anything MCP | Add the same URL as a remote (Streamable HTTP) server. |
 
 Then ask things like:
