@@ -876,6 +876,13 @@ TOOLS = [
                 },
             ],
         },
+        "annotations": {
+            "title": "Seller profile",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
     },
     {
         "name": "serp",
