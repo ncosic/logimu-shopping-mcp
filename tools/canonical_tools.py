@@ -45,6 +45,10 @@ say so. Costs: seller -> seller_credits.py (profile 0.5 cache / 1 live, +0.5 his
 wider series free too) and the history_only flag (the series alone, 0.1 credit, warehouse only).
 
 2026-10-11 (1.6.1): history_only at 0.05 credit (the B143 W4 load test held all four thresholds).
+
+2026-10-18: deals tool (live Amazon Today's Deals, API_CHANGES §95) - keyed-only like serp / bestsellers / offers;
+cost -> app/services/deals.py deals_credits: 1 per started block of 60 deals returned, cached or fresh; empty,
+failed, busy and bad input 0. The batch tool names the offers and deals kinds.
 """
 
 TOOLS = [
@@ -1157,6 +1161,130 @@ TOOLS = [
         },
     },
     {
+        "name": "deals",
+        "description": (
+            "LIVE Amazon Today's Deals: the deals page of one marketplace, read from Amazon at request time and "
+            "filtered the way Amazon's own page filters it - department (category_id), deal collection "
+            "(deal_types: lightning_deal, trending, coupons, started_today, ending_today; or any collection id an "
+            "answer lists), percent off, price, Prime Exclusive, minimum rating, brand. USE WHEN the user asks "
+            "what is on sale or discounted on Amazon right now, wants today's deals or lightning deals in a "
+            "department, deals above a discount or under a price, coupon deals, or deals ending today. DON'T USE "
+            "for one product's price history or past price drops (product with offer_history), for who sells a "
+            "product right now (offers), for a keyword search (serp, shopping) or for what sells best in a "
+            "category (bestsellers). RETURNS deals[] (position, asin, title, link, image, deal_id, deal_link, "
+            "deal_type e.g. BEST_DEAL / LIGHTNING_DEAL, is_lightning_deal, deal_state, percent_claimed, ends_at, "
+            "deal_price and list_price {value, currency, symbol, label}, percent_off, savings, deal_badge, "
+            "is_prime_price, coupon {text, amount, promotion_id, link}, brand, brand_id, department_ids, "
+            "product_group, product_type, variations), categories[] (category_id, name, selected: the departments "
+            "to pass back as category_id), collections[] (id, name: pass back as collection), facets (brands with "
+            "ids, reviewRating, price and percentOff ranges, accessType), selected_filters, filter_check (per "
+            "requested filter: applied / not_applied / unverified), pagination (page, page_size, pages_fetched, "
+            "start_index, returned, has_more, partial), amazon (marketplace_id, locale, currency), observed_at and "
+            "cached. HONESTY: an empty deals list is a real answer (e.g. no lightning deals running at this hour); "
+            "read filter_check before telling the user a filter was applied; there is no total count (has_more "
+            "says whether the last page came back full) and no deal start time; ends_at only where Amazon shows a "
+            "countdown; list_price is Amazon's reference price with its own label (RRP, Was, Typical ...), null "
+            "when the page shows none. LATENCY is SECONDS: ~10-30s a page (pages=5 up to ~2 min); an identical "
+            "request within 15 min may come from our cache in milliseconds. MARKETPLACES us, uk, de, ca, au, fr, "
+            "it, es, jp, mx, br (no Walmart). COST API key required (the free no-signup lane cannot run live "
+            "fetches). 1 credit per started block of 60 deals returned (page_size 120 full = 2, 30 deals = 1), "
+            "cached or fresh; an empty list, a blocked or busy fetch and bad input are never billed."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "country": {
+                    "type": "string",
+                    "enum": ["us", "uk", "de", "ca", "au", "fr", "it", "es", "jp", "mx", "br"],
+                    "description": (
+                        "The Amazon marketplace whose deals page to read. Required unless url is given; with "
+                        "url it must match the URL's marketplace."
+                    ),
+                },
+                "url": {
+                    "type": "string",
+                    "description": (
+                        "Optional: an Amazon deals URL (/deals, /events/deals or /gp/goldbox). The host decides "
+                        "the marketplace and its query string is kept (e.g. a filtered deals page copied from the "
+                        "browser)."
+                    ),
+                },
+                "category_id": {
+                    "type": "string",
+                    "description": (
+                        "A deals department id from categories[] of a previous answer (Amazon applies one "
+                        "department at a time)."
+                    ),
+                },
+                "deal_types": {
+                    "type": "string",
+                    "enum": ["lightning_deal", "trending", "coupons", "started_today", "ending_today"],
+                    "description": "One of Amazon's stable deal collections. Not together with collection.",
+                },
+                "collection": {
+                    "type": "string",
+                    "description": (
+                        "Any other collection id from collections[] of a previous answer (collections differ per "
+                        "marketplace and over time). Not together with deal_types."
+                    ),
+                },
+                "discount": {
+                    "type": "string",
+                    "enum": ["10_percent_off", "25_percent_off", "50_percent_off", "70_percent_off"],
+                    "description": "Rainforest form of min_discount (50_percent_off = at least 50% off). Not together with min_discount.",
+                },
+                "min_discount": {"type": "number", "minimum": 0, "maximum": 100, "description": "Minimum percent off (0-100)."},
+                "max_discount": {"type": "number", "minimum": 0, "maximum": 100, "description": "Maximum percent off (0-100)."},
+                "min_price": {
+                    "type": "number",
+                    "minimum": 0,
+                    "description": "Minimum deal price in the marketplace currency (Amazon applies whole units; a fraction is rounded down).",
+                },
+                "max_price": {
+                    "type": "number",
+                    "minimum": 0,
+                    "description": "Maximum deal price in the marketplace currency (Amazon applies whole units; a fraction is rounded up).",
+                },
+                "prime_exclusive": {"type": "boolean", "default": False, "description": "true = Prime Exclusive deals only."},
+                "minimum_rating": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 4,
+                    "description": "Only products rated at least this many stars (1-4).",
+                },
+                "brand": {
+                    "type": "string",
+                    "description": "A brand id from facets.brands of a previous answer (e.g. 811979|dreame).",
+                },
+                "page": {"type": "integer", "minimum": 1, "maximum": 400, "default": 1, "description": "1-based page of the deals list."},
+                "page_size": {
+                    "type": "integer",
+                    "enum": [30, 60, 90, 120],
+                    "default": 60,
+                    "description": "Deals per page; Amazon serves steps of 30 only. A full 60 is 1 credit, a full 120 is 2.",
+                },
+                "pages": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 5,
+                    "default": 1,
+                    "description": (
+                        "Consecutive pages merged into one answer, starting at page (stops early on a short page). "
+                        "Every started block of 60 deals returned is 1 credit."
+                    ),
+                },
+            },
+            "anyOf": [{"required": ["country"]}, {"required": ["url"]}],
+        },
+        "annotations": {
+            "title": "Amazon Today's Deals (live)",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+    },
+    {
         "name": "brand",
         "description": (
             "Amazon BRAND dossier from Logimu's own buy-box observations (derived "
@@ -1636,7 +1764,7 @@ TOOLS = [
             "CSV. Kinds: product (asins or gtins - or source=tracked for the ASINs this key tracks, typically "
             "with include [history_only] at 0.05 a row), search (terms, live SERP), seller / brand / category / "
             "keywords (paid plans), and every other endpoint as its own kind (shopping, warehouse_search, "
-            "bestsellers, seller_products, seller_brands, seller_network, brand_sellers, brand_network, "
+            "bestsellers, offers, deals, seller_products, seller_brands, seller_network, brand_sellers, brand_network, "
             "keywords_compare, categories, category_search, brands_top, brands_movers, sellers_top, "
             "sellers_movers, categories_top) with the endpoint's query parameters in params. Each row bills what "
             "the endpoint bills; failed, not-found and duplicate rows are never billed; runs are serialized per "
@@ -1680,7 +1808,7 @@ TOOLS = [
                 "terms": {"type": "array", "items": {"type": "string"}, "description": "search / shopping / warehouse_search / category_search batches: the queries."},
                 "seller_ids": {"type": "array", "items": {"type": "string"}, "description": "seller, seller_products, seller_brands, seller_network batches."},
                 "brands": {"type": "array", "items": {"type": "string"}, "description": "brand, brand_sellers, brand_network batches."},
-                "category_ids": {"type": "array", "items": {"type": "string"}, "description": "category / categories batches (ids, or root)."},
+                "category_ids": {"type": "array", "items": {"type": "string"}, "description": "category / categories batches (ids, or root); deals batches (deals department ids, or all for the whole deals page)."},
                 "seeds": {"type": "array", "items": {"type": "string"}, "description": "keywords / keywords_compare batches: seed terms."},
                 "urls": {"type": "array", "items": {"type": "string"}, "description": "bestsellers batches: Best Sellers URLs."},
                 "pages": {"type": "integer", "minimum": 1, "maximum": 40, "description": "search batches: pages per term (1-3); ranked-list batches: pages of 25 rows (1-40)."},
