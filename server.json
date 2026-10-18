@@ -3,7 +3,7 @@
   "name": "com.logimu/shopping-mcp",
   "title": "Logimu",
   "description": "Amazon (11 marketplaces) and Walmart US product data: search, prices, stock, history, sellers.",
-  "version": "1.7.7",
+  "version": "1.8.0",
   "websiteUrl": "https://www.logimu.com/shopping-mcp/",
   "repository": {
     "url": "https://github.com/ncosic/logimu-shopping-mcp",

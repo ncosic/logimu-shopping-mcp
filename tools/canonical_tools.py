@@ -46,9 +46,10 @@ wider series free too) and the history_only flag (the series alone, 0.1 credit, 
 
 2026-10-11 (1.6.1): history_only at 0.05 credit (the B143 W4 load test held all four thresholds).
 
-2026-10-18: deals tool (live Amazon Today's Deals, API_CHANGES §95) - keyed-only like serp / bestsellers / offers;
-cost -> app/services/deals.py deals_credits: 1 per started block of 60 deals returned, cached or fresh; empty,
-failed, busy and bad input 0. The batch tool names the offers and deals kinds.
+2026-10-18 (1.8.0): deals tool: live Amazon Today's Deals, 11 marketplaces (API_CHANGES §95) - keyed-only like
+serp / bestsellers / offers; cost -> app/services/deals.py deals_credits (Nick 2026-10-18: "per fetch"): 1 per deals
+page fetched that returned at least one deal, any page_size, cached or fresh; empty pages, failed, busy and bad input
+0. The batch tool names the offers and deals kinds.
 """
 
 TOOLS = [
@@ -1187,8 +1188,9 @@ TOOLS = [
             "when the page shows none. LATENCY is SECONDS: ~10-30s a page (pages=5 up to ~2 min); an identical "
             "request within 15 min may come from our cache in milliseconds. MARKETPLACES us, uk, de, ca, au, fr, "
             "it, es, jp, mx, br (no Walmart). COST API key required (the free no-signup lane cannot run live "
-            "fetches). 1 credit per started block of 60 deals returned (page_size 120 full = 2, 30 deals = 1), "
-            "cached or fresh; an empty list, a blocked or busy fetch and bad input are never billed."
+            "fetches). 1 credit per deals page fetched that returned at least one deal, whatever its size (30, "
+            "60, 90 or 120 deals are all 1 credit, so page_size=120 gives the most deals per credit), cached or "
+            "fresh; a page with no deals, an empty list, a blocked or busy fetch and bad input are never billed."
         ),
         "inputSchema": {
             "type": "object",
@@ -1261,7 +1263,7 @@ TOOLS = [
                     "type": "integer",
                     "enum": [30, 60, 90, 120],
                     "default": 60,
-                    "description": "Deals per page; Amazon serves steps of 30 only. A full 60 is 1 credit, a full 120 is 2.",
+                    "description": "Deals per page; Amazon serves steps of 30 only. Every page is 1 credit whatever its size, so 120 gives the most deals per credit.",
                 },
                 "pages": {
                     "type": "integer",
@@ -1270,7 +1272,7 @@ TOOLS = [
                     "default": 1,
                     "description": (
                         "Consecutive pages merged into one answer, starting at page (stops early on a short page). "
-                        "Every started block of 60 deals returned is 1 credit."
+                        "1 credit per page that returned deals."
                     ),
                 },
             },
