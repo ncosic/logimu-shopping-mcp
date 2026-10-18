@@ -94,21 +94,24 @@ TOOLS = [
             "walmart. Walmart takes a numeric item ID (or gtin= with the item's UPC) and "
             "returns the intelligence blocks plus its listing content: image_url, "
             "description, breadcrumbs, highlights (spec name/value pairs), warnings, upc, "
-            "rating/review_count, was_price, in_stock, and shipping_cost per seller (no live "
-            "scrape on Walmart). COST free lane 1 of 30 daily queries, cache only, and "
-            "returns the snapshot + 30-day views (the full history streams, bsr_history, "
-            "offer_history and live scrapes need an API key (plans from $19/mo) — the "
-            "response's locked block lists exactly what a key unlocks). Keyed: 0.5 credits "
-            "from cache with everything included - bsr_history and offer_history too, no "
-            "extra charge since 2026-10-10 - and 1 for a live scrape; history_only=true "
-            "returns just the history series for 0.05 credit. Misses and partial scrapes are "
-            "never billed; a miss may return a hint (found on another marketplace, or retry "
-            "with mode=live). SELLER FEEDBACK (2026-09-18): every response carries "
-            "seller_ratings - one entry per seller the answer names (current offers, cheapest "
-            "new/used, buy-box holder and, with offer_history, every historical seller) with "
-            "seller_positive_pct, seller_feedback_count, seller_rating and observed_at from a "
-            "nightly seller-feedback table; offer_history.sellers[] rows carry the same "
-            "fields directly. Amazon's own offers have no feedback. Not billed."
+            "rating/review_count, was_price, in_stock, and shipping_cost per seller; "
+            "mode=live reads the walmart.com page now (2 credits, typically 8-15 s, one page: "
+            "the cheapest other seller is not fetched) and mode=auto serves our record when "
+            "observed within max_age_days, else reads live. COST free lane 1 of 30 daily "
+            "queries, cache only, and returns the snapshot + 30-day views (the full history "
+            "streams, bsr_history, offer_history and live scrapes need an API key (plans from "
+            "$19/mo) — the response's locked block lists exactly what a key unlocks). Keyed: "
+            "0.5 credits from cache with everything included - bsr_history and offer_history "
+            "too, no extra charge since 2026-10-10 - and 1 for a live scrape (2 on Walmart); "
+            "history_only=true returns just the history series for 0.05 credit. Misses and "
+            "partial scrapes are never billed; a miss may return a hint (found on another "
+            "marketplace, or retry with mode=live). SELLER FEEDBACK (2026-09-18): every "
+            "response carries seller_ratings - one entry per seller the answer names (current "
+            "offers, cheapest new/used, buy-box holder and, with offer_history, every "
+            "historical seller) with seller_positive_pct, seller_feedback_count, "
+            "seller_rating and observed_at from a nightly seller-feedback table; "
+            "offer_history.sellers[] rows carry the same fields directly. Amazon's own offers "
+            "have no feedback. Not billed."
         ),
         "inputSchema": {
             "type": "object",
@@ -892,9 +895,11 @@ TOOLS = [
             "it. LATENCY is SECONDS — typically ~8-13s, up to ~90s when the retry ladder "
             "runs; tell the user it is a live fetch. Every call is live: there is no cached "
             "SERP and no mode parameter. MARKETPLACES us, uk, de, ca, au, fr, it, es, jp, mx, "
-            "br (no Walmart). COST API key required (the free no-signup lane cannot run live "
-            "fetches). 1 credit per page ACTUALLY fetched — max_page=3 can stop at 2 when "
-            "Amazon runs out; blocked fetches (502) and empty result sets are never billed."
+            "br, walmart (live walmart.com search: 2 credits per results page, at most 3 "
+            "pages a call; category_id and refinements are Amazon-only). COST API key "
+            "required (the free no-signup lane cannot run live fetches). 1 credit per page "
+            "ACTUALLY fetched — max_page=3 can stop at 2 when Amazon runs out; blocked "
+            "fetches (502) and empty result sets are never billed."
         ),
         "inputSchema": {
             "type": "object",
@@ -908,10 +913,24 @@ TOOLS = [
                 },
                 "country": {
                     "type": "string",
-                    "enum": ["us", "uk", "de", "ca", "au", "fr", "it", "es", "jp", "mx", "br"],
+                    "enum": [
+                        "us",
+                        "uk",
+                        "de",
+                        "ca",
+                        "au",
+                        "fr",
+                        "it",
+                        "es",
+                        "jp",
+                        "mx",
+                        "br",
+                        "walmart",
+                    ],
                     "default": "us",
                     "description": (
-                        "Amazon marketplace to search. No Walmart — live SERP is Amazon-only."
+                        "Amazon marketplace to search, or walmart (a live walmart.com "
+                        "search)."
                     ),
                 },
                 "page": {"type": "integer", "default": 1, "description": "Start page (1-10)."},
