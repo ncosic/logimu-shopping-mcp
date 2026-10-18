@@ -16,7 +16,7 @@ HOSTED = "https://api.logimu.com/mcp"
 SERVER_INFO = {
     "name": "Logimu",
     "title": "Logimu — Amazon & Walmart Shopping Data",
-    "version": "1.7.0",
+    "version": "1.8.0",
     "websiteUrl": "https://api.logimu.com",
 }
 
@@ -1209,9 +1209,10 @@ TOOLS = [
             "identical request within 15 min may come from our cache in milliseconds. "
             "MARKETPLACES us, uk, de, ca, au, fr, it, es, jp, mx, br (no Walmart). COST API "
             "key required (the free no-signup lane cannot run live fetches). 1 credit per "
-            "started block of 60 deals returned (page_size 120 full = 2, 30 deals = 1), "
-            "cached or fresh; an empty list, a blocked or busy fetch and bad input are never "
-            "billed."
+            "deals page fetched that returned at least one deal, whatever its size (30, 60, "
+            "90 or 120 deals are all 1 credit, so page_size=120 gives the most deals per "
+            "credit), cached or fresh; a page with no deals, an empty list, a blocked or busy "
+            "fetch and bad input are never billed."
         ),
         "inputSchema": {
             "type": "object",
@@ -1332,8 +1333,8 @@ TOOLS = [
                     "enum": [30, 60, 90, 120],
                     "default": 60,
                     "description": (
-                        "Deals per page; Amazon serves steps of 30 only. A full 60 is 1 "
-                        "credit, a full 120 is 2."
+                        "Deals per page; Amazon serves steps of 30 only. Every page is 1 "
+                        "credit whatever its size, so 120 gives the most deals per credit."
                     ),
                 },
                 "pages": {
@@ -1343,8 +1344,7 @@ TOOLS = [
                     "default": 1,
                     "description": (
                         "Consecutive pages merged into one answer, starting at page (stops "
-                        "early on a short page). Every started block of 60 deals returned is "
-                        "1 credit."
+                        "early on a short page). 1 credit per page that returned deals."
                     ),
                 },
             },
