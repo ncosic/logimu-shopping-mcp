@@ -1514,7 +1514,8 @@ TOOLS = [
             "what buyers type for X, wants listing / backend keyword language, seeds for "
             "product research, or how a term's suggestions differ by country. NOT volume "
             "figures (Amazon publishes none for its suggestions and none are implied), NOT a "
-            "product-ranking map - for products pass a term to the shopping tool. Positions are "
+            "product-ranking map - which products appear on page 1 for a term is keyword_rankings, "
+            "the keywords a product shows up for is product_keywords. Positions are "
             "comparable only within one list. COST: paid plan required (listed only for keys on "
             "a paid plan), 1 credit per lookup or compare, +0.5 with history when at least one "
             "closed observation exists; an unknown seed is free. Counts against the derived "
@@ -1547,6 +1548,131 @@ TOOLS = [
         },
         "annotations": {
             "title": "Keyword suggestions (observed)",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False,
+        },
+    },
+    {
+        "name": "keyword_rankings",
+        "description": (
+            "Page 1 of Amazon US search for a keyword, as Logimu last OBSERVED it (head search terms taken from "
+            "Amazon's own autocomplete, each observed about once a week, all departments, one US delivery ZIP): the "
+            "organic order with product facts (title, brand, price, rating) and each product's latest observed buy box "
+            "(seller, AMZ / FBA / FBM, other sellers), the sponsored units present in the page HTML (Sponsored Brands "
+            "banners and videos, server-rendered Sponsored Products; ones Amazon loads later by JavaScript are counted "
+            "as slots only), the Overall Pick (Amazon's Choice) holder, Amazon's result count, page_summary (organic "
+            "slots by brand and by buy-box seller, Amazon's own buy boxes, FBA / FBM, Sponsored Brands units by brand) "
+            "and the products that entered or left page 1 since the previous observation, all dated. history=true adds "
+            "every weekly observation and the rank series of the page's products. USE WHEN the user asks which "
+            "products, brands or sellers hold page 1 for a search term, who advertises on it, or how the page changed. "
+            "Amazon US only. NOT volume figures (Amazon publishes none for search terms and none is implied) and NOT "
+            "live: a dated weekly sample, and the same search minutes apart differs by a few products - for a live page "
+            "use the serp tool, for what Amazon suggests for a seed the keywords tool, for the keywords a product shows "
+            "up for product_keywords. A keyword outside the observed set is free (keyword_not_found). COST: paid plan "
+            "required (listed only for keys on a paid plan); 1 credit (+0.5 with history when more than one "
+            "observation exists). Counts against the derived daily cap (default 2,000 calls per key)."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "keyword": {
+                    "type": "string",
+                    "description": "A search term, e.g. 'micro sd card 128gb high endurance' (case-insensitive).",
+                },
+                "country": {
+                    "type": "string",
+                    "enum": ["us"],
+                    "default": "us",
+                    "description": "Amazon US only: the map covers amazon.com search.",
+                },
+                "history": {
+                    "type": "boolean",
+                    "default": False,
+                    "description": "Also return every weekly observation and the products' rank series; +0.5 credit when more than one exists.",
+                },
+            },
+            "required": ["keyword"],
+        },
+        "annotations": {
+            "title": "Keyword rankings (observed)",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False,
+        },
+    },
+    {
+        "name": "product_keywords",
+        "description": (
+            "REVERSE ASIN on Amazon US: every observed keyword (head search terms taken from Amazon's own autocomplete, "
+            "page 1 observed about once a week) whose latest page 1 shows the product, organically with its rank or in "
+            "a sponsored unit present in the page HTML, with the keyword's result count, the Overall Pick badge and the "
+            "date; organic first, best rank first, with totals (keywords, organic, top 10, sponsored, Overall Pick). "
+            "Pass asins (up to 10, the product first) to COMPARE it with competitors: each keyword row adds every "
+            "competitor's organic rank, asins_on_page and gap (a competitor on page 1 organically, the product not); "
+            "gaps=true keeps only those. history=true adds the first product's rank on each keyword over time. USE "
+            "WHEN the user asks which keywords a product (theirs or a competitor's) shows up for, where competitors are "
+            "visible and they are not, or how a product's position on a term moved. Coverage is head search terms and "
+            "page 1 only (the coverage block gives the counts), so a product shows fewer keywords than a full search "
+            "index would. NOT volume figures and NOT live: dated weekly samples. A product not seen on any observed "
+            "page is free (asin_not_found). COST: paid plan required (listed only for keys on a paid plan); 1 credit "
+            "per 25 keywords returned per ASIN compared (+0.5 with history when a keyword has more than one "
+            "observation). Counts against the derived daily cap (default 2,000 calls per key)."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "asin": {
+                    "type": "string",
+                    "description": "A 10-character Amazon ASIN: the keywords it shows up for. Give asin OR asins.",
+                },
+                "asins": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "maxItems": 10,
+                    "description": "Up to 10 ASINs, the product first, then the competitors to compare it with.",
+                },
+                "country": {
+                    "type": "string",
+                    "enum": ["us"],
+                    "default": "us",
+                    "description": "Amazon US only: the map covers amazon.com search.",
+                },
+                "placement": {
+                    "type": "string",
+                    "enum": ["all", "organic", "sponsored"],
+                    "default": "all",
+                    "description": "Organic and sponsored (default), organic only, or sponsored only.",
+                },
+                "gaps": {
+                    "type": "boolean",
+                    "default": False,
+                    "description": "With asins: only the keywords where a competitor is on page 1 organically and the first product is not.",
+                },
+                "limit": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 200,
+                    "default": 50,
+                    "description": "Keywords per answer (1 credit per 25 returned, per ASIN).",
+                },
+                "offset": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "default": 0,
+                    "description": "Skip this many keywords (paging).",
+                },
+                "history": {
+                    "type": "boolean",
+                    "default": False,
+                    "description": "Also return the first product's rank on each keyword in every observation; +0.5 credit when a keyword has more than one.",
+                },
+            },
+        },
+        "annotations": {
+            "title": "Keywords for a product (observed)",
             "readOnlyHint": True,
             "destructiveHint": False,
             "idempotentHint": True,
