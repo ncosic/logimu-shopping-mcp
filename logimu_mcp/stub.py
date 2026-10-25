@@ -16,7 +16,7 @@ HOSTED = "https://api.logimu.com/mcp"
 SERVER_INFO = {
     "name": "Logimu",
     "title": "Logimu — Amazon & Walmart Shopping Data",
-    "version": "1.10.0",
+    "version": "1.10.1",
     "websiteUrl": "https://api.logimu.com",
 }
 
@@ -341,7 +341,7 @@ TOOLS = [
             "returns brown sugar; 'Braun Rasierer' is correct). ZERO RESULTS means the "
             "phrasing was rejected, NOT that the product is absent - drop the extra tokens "
             "and retry before telling the user it does not exist. MARKETPLACES us, uk, de, "
-            "ca, au, fr, it, es, jp, mx, br, walmart. COST without signup 1 of 30 daily "
+            "ca, au, fr, it, es, jp, mx, br, walmart. COST without signup 1 of 5 daily "
             "queries, without detail (detail=true needs a paid plan). Keyed: 2 credits, or 5 "
             "with detail=true. Empty result sets are never billed. detail=true attaches to "
             "EVERY product everything the basic product call carries (2026-09-28): current "
@@ -2322,7 +2322,7 @@ TOOLS = [
 POINTER = (
     "This is the introspection stub. The live server is hosted at "
     f"{HOSTED} — add it to your MCP client as a remote (Streamable HTTP) "
-    "connector. Free, no signup: 30 queries/day. Unlimited use, full history and "
+    "connector. Free, no signup: 5 shopping searches/day. Unlimited use, full history and "
     "live scrapes: a paid-plan API key (from $19/month) at https://api.logimu.com"
 )
 
