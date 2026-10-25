@@ -18,8 +18,8 @@ Costs below are verified against the code, not the docs:
   search  : mcp._dispatch -> ceil(rows/25) credits; 0 when no rows
   serp    : mcp._dispatch -> 1 credit per page ACTUALLY fetched; blocked (502)
             and empty pages unbilled; API key required (no free-lane live fetches)
-Free lane (mcp._call_anon, since 2026-10-25): shopping only, 30 calls/client/UTC day, detail=true
-refused, never billed; product and search are paid-plan tools like seller / brand.
+Free lane (mcp._call_anon, since 2026-10-25): shopping only, 5 calls/client/UTC day (30 until 10-25 18:xx), detail=true
+refused, never billed; product and search need an account (no anonymous use; free-era keys keep them, §108).
 
 search anchor rule (9ff7343f): the server requires q or brand; that rule lived only
 in the category/seller parameter DESCRIPTIONS - prose a model reading just the
@@ -373,7 +373,7 @@ TOOLS = [
             "returns brown sugar; 'Braun Rasierer' is correct). ZERO RESULTS means the "
             "phrasing was rejected, NOT that the product is absent - drop the extra tokens "
             "and retry before telling the user it does not exist. MARKETPLACES us, uk, de, "
-            "ca, au, fr, it, es, jp, mx, br, walmart. COST without signup 1 of 30 daily "
+            "ca, au, fr, it, es, jp, mx, br, walmart. COST without signup 1 of 5 daily "
             "queries, without detail (detail=true needs a paid plan). Keyed: 2 credits, or 5 "
             "with detail=true. Empty result sets are never billed. detail=true attaches to "
             "EVERY product everything the basic product call carries (2026-09-28): current "

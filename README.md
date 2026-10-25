@@ -4,7 +4,7 @@
 
 AI assistants are great at comparing products — and terrible at knowing today's price, what's actually in stock, and which "bestseller" is a relabeled generic. This MCP connector fixes that: your assistant gets **observed Amazon (US, UK, DE, CA, AU, FR, IT, ES, JP, MX, BR) and Walmart US data** — current prices, live stock, real ratings, price/BSR history, and ranked product shortlists — from a continuously refreshed warehouse of 17M+ tracked products.
 
-**Free, no signup: 30 shopping searches per day. Every other tool needs a Logimu plan (from $19/month).**
+**Free, no signup: 5 shopping searches per day. Every other tool needs a Logimu plan (from $19/month).**
 
 ```
 https://api.logimu.com/mcp
@@ -51,7 +51,7 @@ Full REST API reference (same engine, same data): [api.logimu.com/docs](https://
 
 | | Free (no signup) | Paid plan (API key) |
 |---|---|---|
-| Queries | 30 `shopping` searches / day | Credit-metered — subscriptions from $19/month, one-time credit packs, unconditional 14-day money-back |
+| Queries | 5 `shopping` searches / day | Credit-metered — subscriptions from $19/month, one-time credit packs, unconditional 14-day money-back |
 | Data | `shopping`: ranked shortlists from the warehouse (fresh, timestamped), without `detail` | + `product` records with history, `search`, `shopping` `detail`, `mode=live` on-demand fetches, `serp`, `bestsellers`, `offers`, `deals`, seller profiles, brand / category intelligence and market lists, batch jobs on the REST API |
 | Signup | None | [api.logimu.com](https://api.logimu.com) |
 
