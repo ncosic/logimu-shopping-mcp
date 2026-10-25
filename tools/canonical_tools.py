@@ -18,8 +18,8 @@ Costs below are verified against the code, not the docs:
   search  : mcp._dispatch -> ceil(rows/25) credits; 0 when no rows
   serp    : mcp._dispatch -> 1 credit per page ACTUALLY fetched; blocked (502)
             and empty pages unbilled; API key required (no free-lane live fetches)
-Free lane (mcp._call_anon): 30 calls/client/UTC day, mode=live downgraded to auto,
-detail forced False, search limit clamped to 25, never billed.
+Free lane (mcp._call_anon, since 2026-10-25): shopping only, 30 calls/client/UTC day, detail=true
+refused, never billed; product and search are paid-plan tools like seller / brand.
 
 search anchor rule (9ff7343f): the server requires q or brand; that rule lived only
 in the category/seller parameter DESCRIPTIONS - prose a model reading just the
@@ -50,6 +50,10 @@ wider series free too) and the history_only flag (the series alone, 0.1 credit, 
 serp / bestsellers / offers; cost -> app/services/deals.py deals_credits (Nick 2026-10-18: "per fetch"): 1 per deals
 page fetched that returned at least one deal, any page_size, cached or fresh; empty pages, failed, busy and bad input
 0. The batch tool names the offers and deals kinds.
+2026-10-25: resynced FROM the hosted _TOOLS again (live wins): unit_price on product + serp (P94/P97), offers
+`complete` (P98), the deals discount-filter notes (API_CHANGES §103) and "per account" cap wording (10-24) had been
+edited into mcp.py by hand. Same change: product and search became paid-plan tools (Nick: "only shopping endpoint
+should stay in free lane with no possibility of detailed results flag"); their COST lines say so.
 """
 
 TOOLS = [
@@ -67,41 +71,46 @@ TOOLS = [
             "USE to discover products from a keyword (use shopping) or to pull a filtered "
             "list (use search). RETURNS current price, BSR, rating, review count, stock, "
             "buy-box seller and seller count, plus an observed_at freshness stamp, full "
-            "price_history and stock_history back to first observation (keyed; the free lane "
-            "carries the 30-day views), change events tagged with the buy-box seller at each "
-            "change, the current all-seller offer table with 30-day buy-box days (each seller "
-            "row carries fulfillment AMZ/FBA/FBM and delivery days), a fulfillment block "
-            "(buy-box AMZ/FBA/FBM, offer counts, whether Amazon sells and holds the buy box, "
-            "buy-box delivery days and dispatch latency), the bought-past-month badge "
-            "(measured aggregate buyer behavior, not an estimate), brand stats, and since "
-            "2026-09-27: dimensions (item weight + package size as printed plus parsed metric "
-            "weight_g / *_cm), deal_history (list price, savings and coupon/promotion text as "
-            "segments of consecutive observations, with a current view), "
-            "bought_past_month_history (the badge over time; null = page seen without a "
-            "badge), rating_history (rating_count + rating per observed day with "
-            "ratings_gained_30d/90d), and variation_coverage (the variation matrix as last "
-            "seen with, per child, whether we track it and its latest 30-day price - current "
-            "state, not history). With offer_history=true every per-seller point also carries "
-            "that day's shipping cost, fba and prime, and the answer carries "
+            "price_history and stock_history back to first observation, change events tagged "
+            "with the buy-box seller at each change, the current all-seller offer table with "
+            "30-day buy-box days (each seller row carries fulfillment AMZ/FBA/FBM and "
+            "delivery days), a fulfillment block (buy-box AMZ/FBA/FBM, offer counts, whether "
+            "Amazon sells and holds the buy box, buy-box delivery days and dispatch latency), "
+            "the bought-past-month badge (measured aggregate buyer behavior, not an "
+            "estimate), brand stats, and since 2026-09-27: dimensions (item weight + package "
+            "size as printed plus parsed metric weight_g / *_cm), deal_history (list price, "
+            "savings and coupon/promotion text as segments of consecutive observations, with "
+            "a current view), bought_past_month_history (the badge over time; null = page "
+            "seen without a badge), rating_history (rating_count + rating per observed day "
+            "with ratings_gained_30d/90d), and variation_coverage (the variation matrix as "
+            "last seen with, per child, whether we track it and its latest 30-day price - "
+            "current state, not history). With offer_history=true every per-seller point also "
+            "carries that day's shipping cost, fba and prime, and the answer carries "
             "buybox_price_history (2026-10-09): the lowest buy-box price of every observed "
             "day, oldest first, each point labelled source offers (our offer observations, "
             "every Amazon marketplace, from 2026-04-17) or daily_snapshot (the legacy daily "
             "snapshot, Amazon US back to Nov 2023) - the deepest price series we hold; a gap "
-            "between two dates is a stretch we did not observe. Since 2026-10-14 every Amazon answer also "
-            "carries buybox_price_points_hot: every all-offers-page observation of the last 30 days, "
-            "newest last, {ts, price, seller, seller_id, fulfillment, offer_count} - sub-daily for "
-            "ASINs in our hot lane, which refreshes popular and customer-polled ASINs every few hours "
-            "(null when none; history_only carries it too) - and tracking: the lane's state for the "
-            "ASIN (hot, interval_min, last_fetched_at) or null. Since 2026-10-15 Amazon answers carry buybox_condition "
-            "(new | used | null = no featured offer; with buybox_condition_source product_page | offers_page and "
-            "buybox_condition_detail: the pinned offer's condition text, used_only_buybox, or the used storefront's "
-            "name - Amazon Resale / Amazon Warehouse win the buy box like any seller and read as Amazon retail before), "
-            "buybox_state (what the lane's newest all-offers read saw: in_stock | no_buybox | out_of_stock, with "
-            "buybox_state_observed_at and stock_state_source when it decided stock_state; stock_state, in_stock and "
-            "out_of_stock always agree), and on LIVE answers variation_status (page_is_sibling | page_is_other | "
-            "null) + page_asin when Amazon served another ASIN's page for the one asked (cache answers: null). "
-            "Amazon answers also carry the observed "
-            "product-page content, the byline (authors[] with role_norm "
+            "between two dates is a stretch we did not observe. Since 2026-10-14 every Amazon "
+            "answer also carries buybox_price_points_hot: every all-offers-page observation "
+            "of the last 30 days, newest last, {ts, price, seller, seller_id, fulfillment, "
+            "offer_count} - sub-daily for ASINs in our hot lane, which refreshes popular and "
+            "customer-polled ASINs every few hours (null when none; history_only carries it "
+            "too) - and tracking: the lane's state for the ASIN (hot, interval_min, "
+            "last_fetched_at) or null. Since 2026-10-15 Amazon answers carry buybox_condition "
+            "(new | used | null = no featured offer; with buybox_condition_source "
+            "product_page | offers_page and buybox_condition_detail: the pinned offer's "
+            "condition text, used_only_buybox, or the used storefront's name - Amazon Resale "
+            "/ Amazon Warehouse win the buy box like any seller and read as Amazon retail "
+            "before), buybox_state (what the lane's newest all-offers read saw: in_stock | "
+            "no_buybox | out_of_stock, with buybox_state_observed_at and stock_state_source "
+            "when it decided stock_state; stock_state, in_stock and out_of_stock always "
+            "agree), and on LIVE answers variation_status (page_is_sibling | page_is_other | "
+            "null) + page_asin when Amazon served another ASIN's page for the one asked "
+            "(cache answers: null); unit_price on LIVE answers = Amazon's per-unit price of "
+            "price where the page prints one ({symbol, value, currency, raw, per}; null "
+            "otherwise); with full_offers, offers_complete (false = the offers pages stopped "
+            "part-way, offers_partial_reason says why). Amazon answers also carry the "
+            "observed product-page content, the byline (authors[] with role_norm "
             "author/narrator/illustrator/editor/translator + author for books, audiobooks, "
             "music; 2026-09-29), the book/media format (format, format_norm, and formats[]: "
             "every format of the book, each its own ASIN with price and membership "
@@ -119,24 +128,23 @@ TOOLS = [
             "walmart. Walmart takes a numeric item ID (or gtin= with the item's UPC) and "
             "returns the intelligence blocks plus its listing content: image_url, "
             "description, breadcrumbs, highlights (spec name/value pairs), warnings, upc, "
-            "rating/review_count, was_price, in_stock, and shipping_cost per seller; mode=live "
-            "reads the walmart.com page now (2 credits, typically 8-15 s, one page: the "
-            "cheapest other seller is not fetched; location names the store it was priced "
-            "for) and mode=auto serves our record when "
-            "observed within max_age_days, else reads live. COST free lane 1 of 30 daily queries, cache only, and "
-            "returns the snapshot + 30-day views (the full history streams, bsr_history, "
-            "offer_history and live scrapes need an API key (plans from $19/mo) — the "
-            "response's locked block lists exactly what a key unlocks). Keyed: 0.5 credits "
-            "from cache with everything included - bsr_history and offer_history too, no extra "
-            "charge since 2026-10-10 - and 1 for a live scrape (2 on Walmart); history_only=true returns just "
-            "the history series for 0.05 credit. Misses and partial scrapes are never billed; a miss may return a hint "
-            "(found on another marketplace, or retry with mode=live). SELLER FEEDBACK "
-            "(2026-09-18): every response carries seller_ratings - one entry per seller the "
-            "answer names (current offers, cheapest new/used, buy-box holder and, with "
-            "offer_history, every historical seller) with seller_positive_pct, "
-            "seller_feedback_count, seller_rating and observed_at from a nightly "
-            "seller-feedback table; offer_history.sellers[] rows carry the same fields "
-            "directly. Amazon's own offers have no feedback. Not billed."
+            "rating/review_count, was_price, in_stock, and shipping_cost per seller; "
+            "mode=live reads the walmart.com page now (2 credits, typically 8-15 s, one page: "
+            "the cheapest other seller is not fetched; location names the store it was priced "
+            "for) and mode=auto serves our record when observed within max_age_days, else "
+            "reads live. COST paid plans only: the user signs in with their Logimu account or "
+            "passes an API key (the no-signup lane has the shopping tool only). 0.5 credits "
+            "from cache with everything included - bsr_history and offer_history too, no "
+            "extra charge since 2026-10-10 - and 1 for a live scrape (2 on Walmart); "
+            "history_only=true returns just the history series for 0.05 credit. Misses and "
+            "partial scrapes are never billed; a miss may return a hint (found on another "
+            "marketplace, or retry with mode=live). SELLER FEEDBACK (2026-09-18): every "
+            "response carries seller_ratings - one entry per seller the answer names (current "
+            "offers, cheapest new/used, buy-box holder and, with offer_history, every "
+            "historical seller) with seller_positive_pct, seller_feedback_count, "
+            "seller_rating and observed_at from a nightly seller-feedback table; "
+            "offer_history.sellers[] rows carry the same fields directly. Amazon's own offers "
+            "have no feedback. Not billed."
         ),
         "inputSchema": {
             "type": "object",
@@ -191,10 +199,7 @@ TOOLS = [
                     "description": (
                         "cache = stored observation only; live = force an on-demand scrape "
                         "(Amazon only, takes a few seconds); auto = serve cache when fresher "
-                        "than max_age_days, otherwise scrape. The no-signup free lane is "
-                        "cache-only: mode=live returns an error asking for an API key (from "
-                        "$19/mo) (do not offer a live scrape to a keyless caller); with a "
-                        "key, live/auto scrape normally."
+                        "than max_age_days, otherwise scrape."
                     ),
                 },
                 "max_age_days": {
@@ -229,9 +234,8 @@ TOOLS = [
                         "Attach the buy-box owner timeline and per-seller daily price series "
                         "(US buy-box depth back to Dec 2024) plus buybox_price_history, the "
                         "lowest buy-box price of every observed day (Amazon US back to Nov "
-                        "2023). Amazon marketplaces only; needs "
-                        "a paid-plan API key (from $19/mo). Included in the record, no extra "
-                        "credits."
+                        "2023). Amazon marketplaces only; needs a paid-plan API key (from "
+                        "$19/mo). Included in the record, no extra credits."
                     ),
                 },
                 "history_sellers": {
@@ -272,9 +276,9 @@ TOOLS = [
                     "default": False,
                     "description": (
                         "Return ONLY the stored history series - bsr_history, offer_history "
-                        "and buybox_price_history - with no snapshot, content or seller table, "
-                        "for 0.05 credit. USE WHEN the user tracks price or rank over time for "
-                        "many products and does not need the current listing. Amazon "
+                        "and buybox_price_history - with no snapshot, content or seller "
+                        "table, for 0.05 credit. USE WHEN the user tracks price or rank over "
+                        "time for many products and does not need the current listing. Amazon "
                         "marketplaces only, served from stored observations (mode=live is "
                         "refused); needs a paid-plan API key (from $19/mo)."
                     ),
@@ -283,19 +287,23 @@ TOOLS = [
                     "type": "boolean",
                     "default": False,
                     "description": (
-                        "Answer AND track (paid plans): after this answer the ASIN is pinned into our "
-                        "hot lane, which re-reads its all-offers page every `interval` for 30 days and "
-                        "adds every read to buybox_price_points_hot - the same as the track_product "
-                        "tool. No extra credits (the plan's daily tracked-snapshot allowance is drawn); "
-                        "the answer is served even when the tracking is refused and its `track` block "
-                        "says why. Amazon only."
+                        "Answer AND track (paid plans): after this answer the ASIN is pinned "
+                        "into our hot lane, which re-reads its all-offers page every "
+                        "`interval` for 30 days and adds every read to "
+                        "buybox_price_points_hot - the same as the track_product tool. No "
+                        "extra credits (the plan's daily tracked-snapshot allowance is "
+                        "drawn); the answer is served even when the tracking is refused and "
+                        "its `track` block says why. Amazon only."
                     ),
                 },
                 "interval": {
                     "type": "string",
                     "enum": ["1h", "2h", "4h", "12h", "24h"],
                     "default": "4h",
-                    "description": "With track=true: how often the lane re-reads the all-offers page (1h = 24 snapshots a day).",
+                    "description": (
+                        "With track=true: how often the lane re-reads the all-offers page (1h "
+                        "= 24 snapshots a day)."
+                    ),
                 },
             },
             "required": ["asin"],
@@ -365,11 +373,11 @@ TOOLS = [
             "returns brown sugar; 'Braun Rasierer' is correct). ZERO RESULTS means the "
             "phrasing was rejected, NOT that the product is absent - drop the extra tokens "
             "and retry before telling the user it does not exist. MARKETPLACES us, uk, de, "
-            "ca, au, fr, it, es, jp, mx, br, walmart. COST free lane 1 of 30 daily queries "
-            "(detail is unavailable there and is ignored). Keyed: 2 credits, or 5 with "
-            "detail=true. Empty result sets are never billed. detail=true attaches to EVERY "
-            "product everything the basic product call carries (2026-09-28): current sellers "
-            "with fulfillment and delivery, 30-day price/stock events, stock history, "
+            "ca, au, fr, it, es, jp, mx, br, walmart. COST without signup 1 of 30 daily "
+            "queries, without detail (detail=true needs a paid plan). Keyed: 2 credits, or 5 "
+            "with detail=true. Empty result sets are never billed. detail=true attaches to "
+            "EVERY product everything the basic product call carries (2026-09-28): current "
+            "sellers with fulfillment and delivery, 30-day price/stock events, stock history, "
             "brand_stats, dimensions, deal/badge/rating history, variation coverage, page "
             "content and up to 100 featured reviews, plus a response-wide seller_ratings "
             "array; only bsr_history and offer_history stay product-only."
@@ -532,13 +540,13 @@ TOOLS = [
             "the user may want to act on a specific row, and pass it to the product tool for "
             "that item's full history. Every response row is observed marketplace data (the "
             "marketplace field names it). COVERAGE the continuously tracked BSR product "
-            "universe, not the entire Amazon catalog. COST free lane 1 of 30 daily queries, "
-            "capped at 25 rows. Keyed: 1 credit per 25 rows returned. Empty result sets are "
-            "never billed. SELLER FEEDBACK (2026-09-18): the response also carries "
-            "seller_ratings - a separate array with seller_positive_pct, "
-            "seller_feedback_count, seller_rating and observed_at for every buy-box seller "
-            "named in the rows (Amazon marketplaces; absent on Walmart). Row shapes are "
-            "unchanged. Not billed."
+            "universe, not the entire Amazon catalog. COST paid plans only (sign in or an API "
+            "key; the no-signup lane has the shopping tool only). 1 credit per 25 rows "
+            "returned. Empty result sets are never billed. SELLER FEEDBACK (2026-09-18): the "
+            "response also carries seller_ratings - a separate array with "
+            "seller_positive_pct, seller_feedback_count, seller_rating and observed_at for "
+            "every buy-box seller named in the rows (Amazon marketplaces; absent on Walmart). "
+            "Row shapes are unchanged. Not billed."
         ),
         "inputSchema": {
             "type": "object",
@@ -701,9 +709,7 @@ TOOLS = [
                     "type": "integer",
                     "default": 50,
                     "maximum": 100,
-                    "description": (
-                        "Maximum rows to return (up to 100). The free lane caps this at 25."
-                    ),
+                    "description": "Maximum rows to return (up to 100).",
                 },
             },
             "anyOf": [
@@ -903,7 +909,8 @@ TOOLS = [
             "and the user wants Amazon itself checked. DON'T USE for ordinary product "
             "discovery (shopping is <100ms and curated), for filtered datasets (search), or "
             "for one known ASIN (product). RETURNS search_results (position, asin, title, "
-            "link, image, rating, ratings_total, price, list_price, recent_sales badge, "
+            "link, image, rating, ratings_total, price, list_price, unit_price (Amazon's "
+            "per-unit price, where the card prints one, never the price), recent_sales badge, "
             "sponsored, is_prime), search_information (Amazon's OWN result-count estimate — "
             "'over 20,000' is an estimate, not a count), pagination, related_searches, "
             "refinements (round-trip: pass a refinements[*].value back in), ad_blocks / "
@@ -917,11 +924,12 @@ TOOLS = [
             "it. LATENCY is SECONDS — typically ~8-13s, up to ~90s when the retry ladder "
             "runs; tell the user it is a live fetch. Every call is live: there is no cached "
             "SERP and no mode parameter. MARKETPLACES us, uk, de, ca, au, fr, it, es, jp, mx, "
-            "br, walmart (live walmart.com search: 2 credits per results page, at most 3 pages a "
-            "call, location names the store it was priced for; category_id and refinements "
-            "are Amazon-only). COST API key required (the "
-            "free no-signup lane cannot run live fetches). 1 credit per page ACTUALLY fetched — max_page=3 can stop at 2 when "
-            "Amazon runs out; blocked fetches (502) and empty result sets are never billed."
+            "br, walmart (live walmart.com search: 2 credits per results page, at most 3 "
+            "pages a call, location names the store it was priced for; category_id and "
+            "refinements are Amazon-only). COST API key required (the free no-signup lane "
+            "cannot run live fetches). 1 credit per page ACTUALLY fetched — max_page=3 can "
+            "stop at 2 when Amazon runs out; blocked fetches (502) and empty result sets are "
+            "never billed."
         ),
         "inputSchema": {
             "type": "object",
@@ -935,10 +943,24 @@ TOOLS = [
                 },
                 "country": {
                     "type": "string",
-                    "enum": ["us", "uk", "de", "ca", "au", "fr", "it", "es", "jp", "mx", "br", "walmart"],
+                    "enum": [
+                        "us",
+                        "uk",
+                        "de",
+                        "ca",
+                        "au",
+                        "fr",
+                        "it",
+                        "es",
+                        "jp",
+                        "mx",
+                        "br",
+                        "walmart",
+                    ],
                     "default": "us",
                     "description": (
-                        "Amazon marketplace to search, or walmart (a live walmart.com search)."
+                        "Amazon marketplace to search, or walmart (a live walmart.com "
+                        "search)."
                     ),
                 },
                 "page": {"type": "integer", "default": 1, "description": "Start page (1-10)."},
@@ -999,31 +1021,33 @@ TOOLS = [
     {
         "name": "bestsellers",
         "description": (
-            "LIVE Amazon Best Sellers list for one category: up to 100 products in Amazon's rank "
-            "order, the category's full breadcrumb name, and its subcategories with their URLs. "
-            "Given a marketplace's root best-sellers URL (or just a country) it returns the "
-            "top-level categories instead, so you can walk the tree: root -> category -> "
-            "subcategory, always by the URLs a previous answer returned. USE WHEN the user asks "
-            "what sells best in a category or department right now, wants a top-100 or "
-            "best-seller list, or wants to browse Amazon's best-seller categories. DON'T USE for "
-            "a keyword search (serp is Amazon's live results page, shopping a curated shortlist), "
-            "for one known ASIN (product), or for a product's rank history (product with "
-            "bsr_history). RETURNS page_type 'category': current_category (name, full_name = the "
-            "breadcrumb path, path[] with each ancestor's name/url/node_id, node_id, url), "
-            "subcategories[] (name, url, node_id), bestsellers[] (rank, asin, title, link, image, "
-            "rating, ratings_total, price) and pagination; page_type 'root': categories[] (name, "
-            "url, node_id). Every answer carries observed_at (when the list was fetched from "
-            "Amazon) and cached. HONESTY: names are in the page's language (German pages are "
-            "local; fr, it, es, jp, mx and br pages are requested in English); ranks are Amazon's "
-            "at fetch time; price is null when the card shows none; node_id is null for "
-            "departments whose URL carries only a slug. LATENCY is SECONDS: ~15-35s for a fresh "
-            "top 100, ~15s for a root list; Amazon refreshes these lists hourly, so an answer may "
-            "come from our cache (up to 30 min for a category, 24 h for the root list) and then "
-            "returns in milliseconds. MARKETPLACES us, uk, de, ca, au, fr, it, es, jp, mx, br (the "
-            "marketplace comes from the URL; no Walmart). COST API key required (the free "
-            "no-signup lane cannot run live fetches). 1 credit per page of 50 products returned "
-            "(the full top 100 = 2), cached or fresh; the root list is free; a category Amazon "
-            "does not have, a blocked fetch and an empty list are never billed."
+            "LIVE Amazon Best Sellers list for one category: up to 100 products in Amazon's "
+            "rank order, the category's full breadcrumb name, and its subcategories with "
+            "their URLs. Given a marketplace's root best-sellers URL (or just a country) it "
+            "returns the top-level categories instead, so you can walk the tree: root -> "
+            "category -> subcategory, always by the URLs a previous answer returned. USE WHEN "
+            "the user asks what sells best in a category or department right now, wants a "
+            "top-100 or best-seller list, or wants to browse Amazon's best-seller categories. "
+            "DON'T USE for a keyword search (serp is Amazon's live results page, shopping a "
+            "curated shortlist), for one known ASIN (product), or for a product's rank "
+            "history (product with bsr_history). RETURNS page_type 'category': "
+            "current_category (name, full_name = the breadcrumb path, path[] with each "
+            "ancestor's name/url/node_id, node_id, url), subcategories[] (name, url, "
+            "node_id), bestsellers[] (rank, asin, title, link, image, rating, ratings_total, "
+            "price) and pagination; page_type 'root': categories[] (name, url, node_id). "
+            "Every answer carries observed_at (when the list was fetched from Amazon) and "
+            "cached. HONESTY: names are in the page's language (German pages are local; fr, "
+            "it, es, jp, mx and br pages are requested in English); ranks are Amazon's at "
+            "fetch time; price is null when the card shows none; node_id is null for "
+            "departments whose URL carries only a slug. LATENCY is SECONDS: ~15-35s for a "
+            "fresh top 100, ~15s for a root list; Amazon refreshes these lists hourly, so an "
+            "answer may come from our cache (up to 30 min for a category, 24 h for the root "
+            "list) and then returns in milliseconds. MARKETPLACES us, uk, de, ca, au, fr, it, "
+            "es, jp, mx, br (the marketplace comes from the URL; no Walmart). COST API key "
+            "required (the free no-signup lane cannot run live fetches). 1 credit per page of "
+            "50 products returned (the full top 100 = 2), cached or fresh; the root list is "
+            "free; a category Amazon does not have, a blocked fetch and an empty list are "
+            "never billed."
         ),
         "inputSchema": {
             "type": "object",
@@ -1032,19 +1056,19 @@ TOOLS = [
                     "type": "string",
                     "description": (
                         "An Amazon Best Sellers URL: a category (e.g. "
-                        "https://www.amazon.com/gp/bestsellers/kitchen/289814, or any URL from a "
-                        "previous answer's subcategories / categories / path) or a marketplace's "
-                        "root (https://www.amazon.de/gp/bestsellers/). The marketplace comes from "
-                        "the host."
+                        "https://www.amazon.com/gp/bestsellers/kitchen/289814, or any URL "
+                        "from a previous answer's subcategories / categories / path) or a "
+                        "marketplace's root (https://www.amazon.de/gp/bestsellers/). The "
+                        "marketplace comes from the host."
                     ),
                 },
                 "country": {
                     "type": "string",
                     "enum": ["us", "uk", "de", "ca", "au", "fr", "it", "es", "jp", "mx", "br"],
                     "description": (
-                        "Without url: that marketplace's root list of top-level categories (start "
-                        "here when you have no URL yet). With url: must match the URL's "
-                        "marketplace."
+                        "Without url: that marketplace's root list of top-level categories "
+                        "(start here when you have no URL yet). With url: must match the "
+                        "URL's marketplace."
                     ),
                 },
                 "pages": {
@@ -1053,12 +1077,19 @@ TOOLS = [
                     "minimum": 1,
                     "maximum": 2,
                     "description": (
-                        "1 = ranks 1-50 (1 credit), 2 = ranks 1-100 (default, 2 credits). Ignored "
-                        "for the root list."
+                        "1 = ranks 1-50 (1 credit), 2 = ranks 1-100 (default, 2 credits). "
+                        "Ignored for the root list."
                     ),
                 },
             },
-            "anyOf": [{"required": ["url"]}, {"required": ["country"]}],
+            "anyOf": [
+                {
+                    "required": ["url"],
+                },
+                {
+                    "required": ["country"],
+                },
+            ],
         },
         "annotations": {
             "title": "Amazon Best Sellers (live)",
@@ -1071,35 +1102,39 @@ TOOLS = [
     {
         "name": "offers",
         "description": (
-            "LIVE Amazon offers page for one product: every seller offering it right now, read "
-            "from Amazon's 'All offers' view at request time, every page of it (up to 10). Each offer has "
-            "the seller and seller_id, price, shipping_cost, condition, buy box, FBA / FBM / "
-            "Amazon, Prime, ships-from, the delivery promise and the seller's feedback record; "
-            "the answer adds the buy box and the page's own header (title, image, rating, review "
-            "count). No product page is fetched. USE WHEN the user asks who sells a product right "
-            "now, wants every current offer, the cheapest new or used offer or the buy-box winner "
-            "as of this minute, or needs a fresh seller list before buying, sourcing or "
-            "repricing. DON'T USE for brand, BSR, listing content, reviews or price / offer "
-            "history (product), for a keyword search (shopping, serp) or for a brand's or a "
-            "seller's long-run buy-box record (brand, seller). RETURNS asin, marketplace, "
-            "observed_at, title, image_url, rating, reviews_count, currency, price (the buy box), "
-            "buybox_seller, buybox_seller_id, seller_count, no_sellers, pages_fetched, buybox_condition / "
-            "buybox_condition_source / buybox_condition_detail (new | used | null = no featured offer; the pinned "
+            "LIVE Amazon offers page for one product: every seller offering it right now, "
+            "read from Amazon's 'All offers' view at request time, every page of it (up to "
+            "10). Each offer has the seller and seller_id, price, shipping_cost, condition, "
+            "buy box, FBA / FBM / Amazon, Prime, ships-from, the delivery promise and the "
+            "seller's feedback record; the answer adds the buy box and the page's own header "
+            "(title, image, rating, review count). No product page is fetched. USE WHEN the "
+            "user asks who sells a product right now, wants every current offer, the cheapest "
+            "new or used offer or the buy-box winner as of this minute, or needs a fresh "
+            "seller list before buying, sourcing or repricing. DON'T USE for brand, BSR, "
+            "listing content, reviews or price / offer history (product), for a keyword "
+            "search (shopping, serp) or for a brand's or a seller's long-run buy-box record "
+            "(brand, seller). RETURNS asin, marketplace, observed_at, title, image_url, "
+            "rating, reviews_count, currency, price (the buy box), buybox_seller, "
+            "buybox_seller_id, seller_count, no_sellers, pages_fetched, complete (false = "
+            "Amazon stopped serving the offers pages part-way: the list is the part read, "
+            "with partial_reason and a note), buybox_condition / buybox_condition_source / "
+            "buybox_condition_detail (new | used | null = no featured offer; the pinned "
             "offer's condition text or the used storefront's name, e.g. Amazon Resale), "
-            "current_sellers (sellers[] buy box first, then price ascending: seller, seller_id, "
-            "price, shipping_cost, condition, condition_class, is_buybox, is_fba, is_prime, "
-            "fulfillment, ships_from, delivery, seller_rating, plus buybox_days_30d and the 30-day "
-            "buy-box shares from our observations; offer_count, used_offer_count, lowest_new, "
-            "lowest_used), fulfillment (offer counts by AMZ / FBA / FBM, whether Amazon sells or "
-            "holds the buy box) and seller_ratings; with gtin also gtin_resolution (source, "
-            "confidence, barcode_verified). HONESTY: no_sellers=true means Amazon lists no offer "
-            "for the product right now, an answer confirmed by a second, independent fetch before "
-            "it is served; a fetch that fails is reported as an error, never as no sellers. "
-            "LATENCY is SECONDS: typically 4-12s (one page ~4s; a long list walks every page). "
-            "MARKETPLACES us, uk, de, ca, au, fr, it, es, jp, mx, br (no Walmart). COST API key "
-            "required (the free no-signup lane cannot run live fetches). 0.5 credit when the "
-            "answer carries at least one offer; a no-offers answer, an ASIN Amazon does not have, "
-            "a barcode nothing resolves and a failed or busy fetch are never billed."
+            "current_sellers (sellers[] buy box first, then price ascending: seller, "
+            "seller_id, price, shipping_cost, condition, condition_class, is_buybox, is_fba, "
+            "is_prime, fulfillment, ships_from, delivery, seller_rating, plus buybox_days_30d "
+            "and the 30-day buy-box shares from our observations; offer_count, "
+            "used_offer_count, lowest_new, lowest_used), fulfillment (offer counts by AMZ / "
+            "FBA / FBM, whether Amazon sells or holds the buy box) and seller_ratings; with "
+            "gtin also gtin_resolution (source, confidence, barcode_verified). HONESTY: "
+            "no_sellers=true means Amazon lists no offer for the product right now, an answer "
+            "confirmed by a second, independent fetch before it is served; a fetch that fails "
+            "is reported as an error, never as no sellers. LATENCY is SECONDS: typically "
+            "4-12s (one page ~4s; a long list walks every page). MARKETPLACES us, uk, de, ca, "
+            "au, fr, it, es, jp, mx, br (no Walmart). COST API key required (the free "
+            "no-signup lane cannot run live fetches). 0.5 credit when the answer carries at "
+            "least one offer; a no-offers answer, an ASIN Amazon does not have, a barcode "
+            "nothing resolves and a failed or busy fetch are never billed."
         ),
         "inputSchema": {
             "type": "object",
@@ -1115,11 +1150,12 @@ TOOLS = [
                     "type": "string",
                     "description": (
                         "A barcode instead of an ASIN: UPC-12, EAN-13, GTIN-14 or ISBN-13. "
-                        "Resolved cheapest evidence first: a listing we observe that carries it, "
-                        "a book's ISBN-10, the same product on another Amazon marketplace, then "
-                        "Amazon's own search (organic results only). gtin_resolution says which, "
-                        "and barcode_verified whether the listing itself carries the barcode. A "
-                        "barcode nothing resolves is never billed."
+                        "Resolved cheapest evidence first: a listing we observe that carries "
+                        "it, a book's ISBN-10, the same product on another Amazon "
+                        "marketplace, then Amazon's own search (organic results only). "
+                        "gtin_resolution says which, and barcode_verified whether the listing "
+                        "itself carries the barcode. A barcode nothing resolves is never "
+                        "billed."
                     ),
                 },
                 "country": {
@@ -1132,26 +1168,34 @@ TOOLS = [
                     "type": "boolean",
                     "default": False,
                     "description": (
-                        "true also lists the used, refurbished, open-box and collectible offers "
-                        "in current_sellers.sellers. Either way current_sellers carries "
-                        "used_offer_count, lowest_new and lowest_used, and every row its "
-                        "condition. Not billed extra."
+                        "true also lists the used, refurbished, open-box and collectible "
+                        "offers in current_sellers.sellers. Either way current_sellers "
+                        "carries used_offer_count, lowest_new and lowest_used, and every row "
+                        "its condition. Not billed extra."
                     ),
                 },
                 "zip": {
                     "type": "string",
                     "description": (
-                        "Optional (2026-10-14): a US 5-digit ZIP - the offers page as Amazon shows it to a "
-                        "shopper at that ZIP, with location (Amazon's confirmed 'Deliver to' answer) and "
-                        "deliverable (whether the item is offered to that ZIP right now; Amazon Fresh and Whole "
-                        "Foods items deliver only to some ZIPs, and an out-of-area ZIP shows the same unavailable "
-                        "box as a stock-out). Page 1 of the offers only, a one-off session, nothing stored. "
-                        "country=us only. 1 credit when the answer carries an offer; a ZIP Amazon rejects is "
-                        "guidance, never billed."
+                        "Optional (2026-10-14): a US 5-digit ZIP - the offers page as Amazon "
+                        "shows it to a shopper at that ZIP, with location (Amazon's confirmed "
+                        "'Deliver to' answer) and deliverable (whether the item is offered to "
+                        "that ZIP right now; Amazon Fresh and Whole Foods items deliver only "
+                        "to some ZIPs, and an out-of-area ZIP shows the same unavailable box "
+                        "as a stock-out). Page 1 of the offers only, a one-off session, "
+                        "nothing stored. country=us only. 1 credit when the answer carries an "
+                        "offer; a ZIP Amazon rejects is guidance, never billed."
                     ),
                 },
             },
-            "anyOf": [{"required": ["asin"]}, {"required": ["gtin"]}],
+            "anyOf": [
+                {
+                    "required": ["asin"],
+                },
+                {
+                    "required": ["gtin"],
+                },
+            ],
         },
         "annotations": {
             "title": "Amazon Offers (live)",
@@ -1164,35 +1208,43 @@ TOOLS = [
     {
         "name": "deals",
         "description": (
-            "LIVE Amazon Today's Deals: the deals page of one marketplace, read from Amazon at request time and "
-            "filtered the way Amazon's own page filters it - department (category_id), deal collection "
-            "(deal_types: lightning_deal, trending, coupons, started_today, ending_today; or any collection id an "
-            "answer lists), percent off, price, Prime Exclusive, minimum rating, brand. USE WHEN the user asks "
-            "what is on sale or discounted on Amazon right now, wants today's deals or lightning deals in a "
-            "department, deals above a discount or under a price, coupon deals, or deals ending today. DON'T USE "
-            "for one product's price history or past price drops (product with offer_history), for who sells a "
-            "product right now (offers), for a keyword search (serp, shopping) or for what sells best in a "
-            "category (bestsellers). RETURNS deals[] (position, asin, title, link, image, deal_id, deal_link, "
-            "deal_type e.g. BEST_DEAL / LIGHTNING_DEAL, is_lightning_deal, deal_state, percent_claimed, ends_at, "
-            "deal_price and list_price {value, currency, symbol, label}, percent_off, savings, deal_badge, "
-            "is_prime_price, coupon {text, amount, promotion_id, link}, brand, brand_id, department_ids, "
-            "product_group, product_type, variations), categories[] (category_id, name, selected: the departments "
-            "to pass back as category_id), collections[] (id, name: pass back as collection), facets (brands with "
-            "ids, reviewRating, price and percentOff ranges, accessType), selected_filters, filter_check (per "
-            "requested filter: applied / not_applied / unverified), pagination (page, page_size, pages_fetched, "
-            "start_index, returned, has_more, partial), amazon (marketplace_id, locale, currency), observed_at and "
-            "cached. HONESTY: an empty deals list is a real answer (e.g. no lightning deals running at this hour); "
-            "a filter Amazon did not apply (filter_check not_applied, e.g. a category_id that is not one of the "
-            "marketplace's deals departments) is refused as an error, never billed, instead of serving the unfiltered "
-            "page; unverified filters are served, so say so before relying on them; there is no total count (has_more "
-            "says whether the last page came back full) and no deal start time; ends_at only where Amazon shows a "
-            "countdown; list_price is Amazon's reference price with its own label (RRP, Was, Typical ...), null "
-            "when the page shows none. LATENCY is SECONDS: ~10-30s a page (pages=5 up to ~2 min); an identical "
-            "request within 15 min may come from our cache in milliseconds. MARKETPLACES us, uk, de, ca, au, fr, "
-            "it, es, jp, mx, br (no Walmart). COST API key required (the free no-signup lane cannot run live "
-            "fetches). 1 credit per deals page fetched that returned at least one deal, whatever its size (30, "
-            "60, 90 or 120 deals are all 1 credit, so page_size=120 gives the most deals per credit), cached or "
-            "fresh; a page with no deals, an empty list, a blocked or busy fetch and bad input are never billed."
+            "LIVE Amazon Today's Deals: the deals page of one marketplace, read from Amazon "
+            "at request time and filtered the way Amazon's own page filters it - department "
+            "(category_id), deal collection (deal_types: lightning_deal, trending, coupons, "
+            "started_today, ending_today; or any collection id an answer lists), percent off, "
+            "price, Prime Exclusive, minimum rating, brand. USE WHEN the user asks what is on "
+            "sale or discounted on Amazon right now, wants today's deals or lightning deals "
+            "in a department, deals above a discount or under a price, coupon deals, or deals "
+            "ending today. DON'T USE for one product's price history or past price drops "
+            "(product with offer_history), for who sells a product right now (offers), for a "
+            "keyword search (serp, shopping) or for what sells best in a category "
+            "(bestsellers). RETURNS deals[] (position, asin, title, link, image, deal_id, "
+            "deal_link, deal_type e.g. BEST_DEAL / LIGHTNING_DEAL, is_lightning_deal, "
+            "deal_state, percent_claimed, ends_at, deal_price and list_price {value, "
+            "currency, symbol, label}, percent_off, savings, deal_badge, is_prime_price, "
+            "coupon {text, amount, promotion_id, link}, brand, brand_id, department_ids, "
+            "product_group, product_type, variations), categories[] (category_id, name, "
+            "selected: the departments to pass back as category_id), collections[] (id, name: "
+            "pass back as collection), facets (brands with ids, reviewRating, price and "
+            "percentOff ranges, accessType), selected_filters, filter_check (per requested "
+            "filter: applied / not_applied / unverified), pagination (page, page_size, "
+            "pages_fetched, start_index, returned, has_more, partial), amazon "
+            "(marketplace_id, locale, currency), observed_at and cached. HONESTY: an empty "
+            "deals list is a real answer (e.g. no lightning deals running at this hour); a "
+            "filter Amazon did not apply (filter_check not_applied, e.g. a category_id that "
+            "is not one of the marketplace's deals departments) is refused as an error, never "
+            "billed, instead of serving the unfiltered page; unverified filters are served, "
+            "so say so before relying on them; there is no total count (has_more says whether "
+            "the last page came back full) and no deal start time; ends_at only where Amazon "
+            "shows a countdown; list_price is Amazon's reference price with its own label "
+            "(RRP, Was, Typical ...), null when the page shows none. LATENCY is SECONDS: "
+            "~10-30s a page (pages=5 up to ~2 min); an identical request within 15 min may "
+            "come from our cache in milliseconds. MARKETPLACES us, uk, de, ca, au, fr, it, "
+            "es, jp, mx, br (no Walmart). COST API key required (the free no-signup lane "
+            "cannot run live fetches). 1 credit per deals page fetched that returned at least "
+            "one deal, whatever its size (30, 60, 90 or 120 deals are all 1 credit, so "
+            "page_size=120 gives the most deals per credit), cached or fresh; a page with no "
+            "deals, an empty list, a blocked or busy fetch and bad input are never billed."
         ),
         "inputSchema": {
             "type": "object",
@@ -1201,55 +1253,102 @@ TOOLS = [
                     "type": "string",
                     "enum": ["us", "uk", "de", "ca", "au", "fr", "it", "es", "jp", "mx", "br"],
                     "description": (
-                        "The Amazon marketplace whose deals page to read. Required unless url is given; with "
-                        "url it must match the URL's marketplace."
+                        "The Amazon marketplace whose deals page to read. Required unless url "
+                        "is given; with url it must match the URL's marketplace."
                     ),
                 },
                 "url": {
                     "type": "string",
                     "description": (
-                        "Optional: an Amazon deals URL (/deals, /events/deals or /gp/goldbox). The host decides "
-                        "the marketplace and its query string is kept (e.g. a filtered deals page copied from the "
-                        "browser)."
+                        "Optional: an Amazon deals URL (/deals, /events/deals or "
+                        "/gp/goldbox). The host decides the marketplace and its query string "
+                        "is kept (e.g. a filtered deals page copied from the browser)."
                     ),
                 },
                 "category_id": {
                     "type": "string",
                     "description": (
-                        "A deals department id from categories[] of a previous answer (Amazon applies one "
-                        "department at a time)."
+                        "A deals department id from categories[] of a previous answer (Amazon "
+                        "applies one department at a time)."
                     ),
                 },
                 "deal_types": {
                     "type": "string",
-                    "enum": ["lightning_deal", "trending", "coupons", "started_today", "ending_today"],
-                    "description": "One of Amazon's stable deal collections. Not together with collection.",
+                    "enum": [
+                        "lightning_deal",
+                        "trending",
+                        "coupons",
+                        "started_today",
+                        "ending_today",
+                    ],
+                    "description": (
+                        "One of Amazon's stable deal collections. Not together with "
+                        "collection."
+                    ),
                 },
                 "collection": {
                     "type": "string",
                     "description": (
-                        "Any other collection id from collections[] of a previous answer (collections differ per "
-                        "marketplace and over time). Not together with deal_types."
+                        "Any other collection id from collections[] of a previous answer "
+                        "(collections differ per marketplace and over time). Not together "
+                        "with deal_types."
                     ),
                 },
                 "discount": {
                     "type": "string",
-                    "enum": ["10_percent_off", "25_percent_off", "50_percent_off", "70_percent_off"],
-                    "description": "Rainforest form of min_discount (50_percent_off = at least 50% off). Not together with min_discount.",
+                    "enum": [
+                        "10_percent_off",
+                        "25_percent_off",
+                        "50_percent_off",
+                        "70_percent_off",
+                    ],
+                    "description": (
+                        "Rainforest form of min_discount (50_percent_off = at least 50% off). "
+                        "Not together with min_discount."
+                    ),
                 },
-                "min_discount": {"type": "number", "minimum": 0, "maximum": 100, "description": "Minimum percent off (0-100)."},
-                "max_discount": {"type": "number", "minimum": 0, "maximum": 100, "description": "Maximum percent off (0-100)."},
+                "min_discount": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100,
+                    "description": (
+                        "Minimum percent off (0-100). Amazon applies it on the us, uk, de, "
+                        "ca, au, mx, jp and br deals pages; amazon.it, amazon.fr and "
+                        "amazon.es have no discount filter, so there it is refused "
+                        "(not_applied, never billed): ask without it and filter on "
+                        "percent_off."
+                    ),
+                },
+                "max_discount": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100,
+                    "description": (
+                        "Maximum percent off (0-100). Same marketplaces as min_discount "
+                        "(refused on it, fr, es)."
+                    ),
+                },
                 "min_price": {
                     "type": "number",
                     "minimum": 0,
-                    "description": "Minimum deal price in the marketplace currency (Amazon applies whole units; a fraction is rounded down).",
+                    "description": (
+                        "Minimum deal price in the marketplace currency (Amazon applies whole "
+                        "units; a fraction is rounded down)."
+                    ),
                 },
                 "max_price": {
                     "type": "number",
                     "minimum": 0,
-                    "description": "Maximum deal price in the marketplace currency (Amazon applies whole units; a fraction is rounded up).",
+                    "description": (
+                        "Maximum deal price in the marketplace currency (Amazon applies whole "
+                        "units; a fraction is rounded up)."
+                    ),
                 },
-                "prime_exclusive": {"type": "boolean", "default": False, "description": "true = Prime Exclusive deals only."},
+                "prime_exclusive": {
+                    "type": "boolean",
+                    "default": False,
+                    "description": "true = Prime Exclusive deals only.",
+                },
                 "minimum_rating": {
                     "type": "integer",
                     "minimum": 1,
@@ -1258,14 +1357,26 @@ TOOLS = [
                 },
                 "brand": {
                     "type": "string",
-                    "description": "A brand id from facets.brands of a previous answer (e.g. 811979|dreame).",
+                    "description": (
+                        "A brand id from facets.brands of a previous answer (e.g. "
+                        "811979|dreame)."
+                    ),
                 },
-                "page": {"type": "integer", "minimum": 1, "maximum": 400, "default": 1, "description": "1-based page of the deals list."},
+                "page": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 400,
+                    "default": 1,
+                    "description": "1-based page of the deals list.",
+                },
                 "page_size": {
                     "type": "integer",
                     "enum": [30, 60, 90, 120],
                     "default": 60,
-                    "description": "Deals per page; Amazon serves steps of 30 only. Every page is 1 credit whatever its size, so 120 gives the most deals per credit.",
+                    "description": (
+                        "Deals per page; Amazon serves steps of 30 only. Every page is 1 "
+                        "credit whatever its size, so 120 gives the most deals per credit."
+                    ),
                 },
                 "pages": {
                     "type": "integer",
@@ -1273,12 +1384,19 @@ TOOLS = [
                     "maximum": 5,
                     "default": 1,
                     "description": (
-                        "Consecutive pages merged into one answer, starting at page (stops early on a short page). "
-                        "1 credit per page that returned deals."
+                        "Consecutive pages merged into one answer, starting at page (stops "
+                        "early on a short page). 1 credit per page that returned deals."
                     ),
                 },
             },
-            "anyOf": [{"required": ["country"]}, {"required": ["url"]}],
+            "anyOf": [
+                {
+                    "required": ["country"],
+                },
+                {
+                    "required": ["url"],
+                },
+            ],
         },
         "annotations": {
             "title": "Amazon Today's Deals (live)",
@@ -1376,20 +1494,29 @@ TOOLS = [
             "observed buy-box days. USE WHEN the user asks how competitive / Amazon-dominated "
             "/ FBA-heavy a category is, how big it is, which brands lead it, or wants to size "
             "a private-label or wholesale entry. Give category_id (Logimu's category id - the "
-            "one every search result carries; or node_id for an Amazon browse-node id) OR q (a "
-            "name fragment, English alias included) - with q the tool first returns matching "
-            "categories (free) so you can pick the id - OR list=true to walk the taxonomy "
-            "(the marketplace's root categories, or the children of parent_id; free). "
-            "history=true adds months of products / brands / sellers. All 11 Amazon "
-            "marketplaces. COST: paid plan required (listed only for keys on a paid plan). "
-            "1 credit per category profile, +0.5 with non-empty history; the name lookup and "
+            "one every search result carries; or node_id for an Amazon browse-node id) OR q "
+            "(a name fragment, English alias included) - with q the tool first returns "
+            "matching categories (free) so you can pick the id - OR list=true to walk the "
+            "taxonomy (the marketplace's root categories, or the children of parent_id; "
+            "free). history=true adds months of products / brands / sellers. All 11 Amazon "
+            "marketplaces. COST: paid plan required (listed only for keys on a paid plan). 1 "
+            "credit per category profile, +0.5 with non-empty history; the name lookup and "
             "the taxonomy listing are free; unknown id: 0."
         ),
         "inputSchema": {
             "type": "object",
             "properties": {
-                "category_id": {"type": "integer", "description": "Logimu category id (warehouse id, as returned by every search result and listing)."},
-                "node_id": {"type": "integer", "description": "Instead of category_id: the Amazon browse-node id."},
+                "category_id": {
+                    "type": "integer",
+                    "description": (
+                        "Logimu category id (warehouse id, as returned by every search result "
+                        "and listing)."
+                    ),
+                },
+                "node_id": {
+                    "type": "integer",
+                    "description": "Instead of category_id: the Amazon browse-node id.",
+                },
                 "q": {
                     "type": "string",
                     "description": (
@@ -1400,9 +1527,17 @@ TOOLS = [
                 "list": {
                     "type": "boolean",
                     "default": False,
-                    "description": "Walk the taxonomy: the marketplace's root categories, or the children of parent_id. Free.",
+                    "description": (
+                        "Walk the taxonomy: the marketplace's root categories, or the "
+                        "children of parent_id. Free."
+                    ),
                 },
-                "parent_id": {"type": "integer", "description": "With list=true: list this category's children instead of the roots."},
+                "parent_id": {
+                    "type": "integer",
+                    "description": (
+                        "With list=true: list this category's children instead of the roots."
+                    ),
+                },
                 "country": {
                     "type": "string",
                     "enum": ["us", "uk", "de", "ca", "au", "fr", "it", "es", "jp", "mx", "br"],
@@ -1440,7 +1575,7 @@ TOOLS = [
             "biggest resellers, which categories are hot. Then drill in with the brand / "
             "seller / category tools. All 11 Amazon marketplaces. COST: paid plan required "
             "(listed only for keys on a paid plan), 1 credit per page of 25 rows returned (an "
-            "empty page is free). Daily cap per key on the derived family (default 2,000 "
+            "empty page is free). Daily cap per account on the derived family (default 2,000 "
             "calls)."
         ),
         "inputSchema": {
@@ -1506,27 +1641,30 @@ TOOLS = [
             "Amazon's OWN autocomplete suggestion lists for a seed term, from Logimu's "
             "continuous harvest (since Aug 2026, 11 marketplaces): up to 6 lists - one per "
             "crawled prefix / department - each term with its position 1-10 WITHIN that list, "
-            "when it was first and last observed and the marketplaces it was observed in, plus "
-            "related observed vocabulary starting with the seed. history=true adds every "
+            "when it was first and last observed and the marketplaces it was observed in, "
+            "plus related observed vocabulary starting with the seed. history=true adds every "
             "observation of each list since the harvest began (a term entering, leaving or "
             "moving position). compare='us,uk,de' instead returns the seed's primary list on "
-            "each marketplace and a matrix of positions per marketplace. USE WHEN the user asks "
-            "what buyers type for X, wants listing / backend keyword language, seeds for "
+            "each marketplace and a matrix of positions per marketplace. USE WHEN the user "
+            "asks what buyers type for X, wants listing / backend keyword language, seeds for "
             "product research, or how a term's suggestions differ by country. NOT volume "
             "figures (Amazon publishes none for its suggestions and none are implied), NOT a "
-            "product-ranking map - which products appear on page 1 for a term is keyword_rankings, "
-            "the keywords a product shows up for is product_keywords. Positions are "
-            "comparable only within one list. COST: paid plan required (listed only for keys on "
-            "a paid plan), 1 credit per lookup or compare, +0.5 with history when at least one "
-            "closed observation exists; an unknown seed is free. Counts against the derived "
-            "daily cap (default 2,000 calls per key)."
+            "product-ranking map - which products appear on page 1 for a term is "
+            "keyword_rankings, the keywords a product shows up for is product_keywords. "
+            "Positions are comparable only within one list. COST: paid plan required (listed "
+            "only for keys on a paid plan), 1 credit per lookup or compare, +0.5 with history "
+            "when at least one closed observation exists; an unknown seed is free. Counts "
+            "against the derived daily cap (default 2,000 calls per account)."
         ),
         "inputSchema": {
             "type": "object",
             "properties": {
                 "seed": {
                     "type": "string",
-                    "description": "A seed term or prefix, at least 3 characters, e.g. 'electric toothbrush'.",
+                    "description": (
+                        "A seed term or prefix, at least 3 characters, e.g. 'electric "
+                        "toothbrush'."
+                    ),
                 },
                 "country": {
                     "type": "string",
@@ -1537,11 +1675,17 @@ TOOLS = [
                 "history": {
                     "type": "boolean",
                     "default": False,
-                    "description": "Also return each list's observation history (+0.5 credit when a closed observation exists).",
+                    "description": (
+                        "Also return each list's observation history (+0.5 credit when a "
+                        "closed observation exists)."
+                    ),
                 },
                 "compare": {
                     "type": "string",
-                    "description": "Comma-separated marketplaces to compare instead of one lookup, e.g. 'us,uk,de' (2-11).",
+                    "description": (
+                        "Comma-separated marketplaces to compare instead of one lookup, e.g. "
+                        "'us,uk,de' (2-11)."
+                    ),
                 },
             },
             "required": ["seed"],
@@ -1557,29 +1701,38 @@ TOOLS = [
     {
         "name": "keyword_rankings",
         "description": (
-            "Page 1 of Amazon US search for a keyword, as Logimu last OBSERVED it (head search terms taken from "
-            "Amazon's own autocomplete, each observed about once a week, all departments, one US delivery ZIP): the "
-            "organic order with product facts (title, brand, price, rating) and each product's latest observed buy box "
-            "(seller, AMZ / FBA / FBM, other sellers), the sponsored units present in the page HTML (Sponsored Brands "
-            "banners and videos, server-rendered Sponsored Products; ones Amazon loads later by JavaScript are counted "
-            "as slots only), the Overall Pick (Amazon's Choice) holder, Amazon's result count, page_summary (organic "
-            "slots by brand and by buy-box seller, Amazon's own buy boxes, FBA / FBM, Sponsored Brands units by brand) "
-            "and the products that entered or left page 1 since the previous observation, all dated. history=true adds "
-            "every weekly observation and the rank series of the page's products. USE WHEN the user asks which "
-            "products, brands or sellers hold page 1 for a search term, who advertises on it, or how the page changed. "
-            "Amazon US only. NOT volume figures (Amazon publishes none for search terms and none is implied) and NOT "
-            "live: a dated weekly sample, and the same search minutes apart differs by a few products - for a live page "
-            "use the serp tool, for what Amazon suggests for a seed the keywords tool, for the keywords a product shows "
-            "up for product_keywords. A keyword outside the observed set is free (keyword_not_found). COST: paid plan "
-            "required (listed only for keys on a paid plan); 1 credit (+0.5 with history when more than one "
-            "observation exists). Counts against the derived daily cap (default 2,000 calls per key)."
+            "Page 1 of Amazon US search for a keyword, as Logimu last OBSERVED it (head "
+            "search terms taken from Amazon's own autocomplete, each observed about once a "
+            "week, all departments, one US delivery ZIP): the organic order with product "
+            "facts (title, brand, price, rating) and each product's latest observed buy box "
+            "(seller, AMZ / FBA / FBM, other sellers), the sponsored units present in the "
+            "page HTML (Sponsored Brands banners and videos, server-rendered Sponsored "
+            "Products; ones Amazon loads later by JavaScript are counted as slots only), the "
+            "Overall Pick (Amazon's Choice) holder, Amazon's result count, page_summary "
+            "(organic slots by brand and by buy-box seller, Amazon's own buy boxes, FBA / "
+            "FBM, Sponsored Brands units by brand) and the products that entered or left page "
+            "1 since the previous observation, all dated. history=true adds every weekly "
+            "observation and the rank series of the page's products. USE WHEN the user asks "
+            "which products, brands or sellers hold page 1 for a search term, who advertises "
+            "on it, or how the page changed. Amazon US only. NOT volume figures (Amazon "
+            "publishes none for search terms and none is implied) and NOT live: a dated "
+            "weekly sample, and the same search minutes apart differs by a few products - for "
+            "a live page use the serp tool, for what Amazon suggests for a seed the keywords "
+            "tool, for the keywords a product shows up for product_keywords. A keyword "
+            "outside the observed set is free (keyword_not_found). COST: paid plan required "
+            "(listed only for keys on a paid plan); 1 credit (+0.5 with history when more "
+            "than one observation exists). Counts against the derived daily cap (default "
+            "2,000 calls per account)."
         ),
         "inputSchema": {
             "type": "object",
             "properties": {
                 "keyword": {
                     "type": "string",
-                    "description": "A search term, e.g. 'micro sd card 128gb high endurance' (case-insensitive).",
+                    "description": (
+                        "A search term, e.g. 'micro sd card 128gb high endurance' "
+                        "(case-insensitive)."
+                    ),
                 },
                 "country": {
                     "type": "string",
@@ -1590,7 +1743,10 @@ TOOLS = [
                 "history": {
                     "type": "boolean",
                     "default": False,
-                    "description": "Also return every weekly observation and the products' rank series; +0.5 credit when more than one exists.",
+                    "description": (
+                        "Also return every weekly observation and the products' rank series; "
+                        "+0.5 credit when more than one exists."
+                    ),
                 },
             },
             "required": ["keyword"],
@@ -1606,33 +1762,44 @@ TOOLS = [
     {
         "name": "product_keywords",
         "description": (
-            "REVERSE ASIN on Amazon US: every observed keyword (head search terms taken from Amazon's own autocomplete, "
-            "page 1 observed about once a week) whose latest page 1 shows the product, organically with its rank or in "
-            "a sponsored unit present in the page HTML, with the keyword's result count, the Overall Pick badge and the "
-            "date; organic first, best rank first, with totals (keywords, organic, top 10, sponsored, Overall Pick). "
-            "Pass asins (up to 10, the product first) to COMPARE it with competitors: each keyword row adds every "
-            "competitor's organic rank, asins_on_page and gap (a competitor on page 1 organically, the product not); "
-            "gaps=true keeps only those. history=true adds the first product's rank on each keyword over time. USE "
-            "WHEN the user asks which keywords a product (theirs or a competitor's) shows up for, where competitors are "
-            "visible and they are not, or how a product's position on a term moved. Coverage is head search terms and "
-            "page 1 only (the coverage block gives the counts), so a product shows fewer keywords than a full search "
-            "index would. NOT volume figures and NOT live: dated weekly samples. A product not seen on any observed "
-            "page is free (asin_not_found). COST: paid plan required (listed only for keys on a paid plan); 1 credit "
-            "per 25 keywords returned per ASIN compared (+0.5 with history when a keyword has more than one "
-            "observation). Counts against the derived daily cap (default 2,000 calls per key)."
+            "REVERSE ASIN on Amazon US: every observed keyword (head search terms taken from "
+            "Amazon's own autocomplete, page 1 observed about once a week) whose latest page "
+            "1 shows the product, organically with its rank or in a sponsored unit present in "
+            "the page HTML, with the keyword's result count, the Overall Pick badge and the "
+            "date; organic first, best rank first, with totals (keywords, organic, top 10, "
+            "sponsored, Overall Pick). Pass asins (up to 10, the product first) to COMPARE it "
+            "with competitors: each keyword row adds every competitor's organic rank, "
+            "asins_on_page and gap (a competitor on page 1 organically, the product not); "
+            "gaps=true keeps only those. history=true adds the first product's rank on each "
+            "keyword over time. USE WHEN the user asks which keywords a product (theirs or a "
+            "competitor's) shows up for, where competitors are visible and they are not, or "
+            "how a product's position on a term moved. Coverage is head search terms and page "
+            "1 only (the coverage block gives the counts), so a product shows fewer keywords "
+            "than a full search index would. NOT volume figures and NOT live: dated weekly "
+            "samples. A product not seen on any observed page is free (asin_not_found). COST: "
+            "paid plan required (listed only for keys on a paid plan); 1 credit per 25 "
+            "keywords returned per ASIN compared (+0.5 with history when a keyword has more "
+            "than one observation). Counts against the derived daily cap (default 2,000 calls "
+            "per account)."
         ),
         "inputSchema": {
             "type": "object",
             "properties": {
                 "asin": {
                     "type": "string",
-                    "description": "A 10-character Amazon ASIN: the keywords it shows up for. Give asin OR asins.",
+                    "description": (
+                        "A 10-character Amazon ASIN: the keywords it shows up for. Give asin "
+                        "OR asins."
+                    ),
                 },
                 "asins": {
                     "type": "array",
                     "items": {"type": "string"},
                     "maxItems": 10,
-                    "description": "Up to 10 ASINs, the product first, then the competitors to compare it with.",
+                    "description": (
+                        "Up to 10 ASINs, the product first, then the competitors to compare "
+                        "it with."
+                    ),
                 },
                 "country": {
                     "type": "string",
@@ -1644,12 +1811,17 @@ TOOLS = [
                     "type": "string",
                     "enum": ["all", "organic", "sponsored"],
                     "default": "all",
-                    "description": "Organic and sponsored (default), organic only, or sponsored only.",
+                    "description": (
+                        "Organic and sponsored (default), organic only, or sponsored only."
+                    ),
                 },
                 "gaps": {
                     "type": "boolean",
                     "default": False,
-                    "description": "With asins: only the keywords where a competitor is on page 1 organically and the first product is not.",
+                    "description": (
+                        "With asins: only the keywords where a competitor is on page 1 "
+                        "organically and the first product is not."
+                    ),
                 },
                 "limit": {
                     "type": "integer",
@@ -1667,7 +1839,10 @@ TOOLS = [
                 "history": {
                     "type": "boolean",
                     "default": False,
-                    "description": "Also return the first product's rank on each keyword in every observation; +0.5 credit when a keyword has more than one.",
+                    "description": (
+                        "Also return the first product's rank on each keyword in every "
+                        "observation; +0.5 credit when a keyword has more than one."
+                    ),
                 },
             },
         },
@@ -1682,28 +1857,33 @@ TOOLS = [
     {
         "name": "track_product",
         "description": (
-            "TRACK a product: pin an Amazon ASIN into our hot lane so its all-offers page is re-read every hour "
-            "or every 2, 4, 12 or 24 hours, for as long as the plan is active (or a ttl_days you set), with e-mail "
-            "and webhook alerts on the thresholds you give; every read lands in the product's history as a sub-daily "
-            "buy-box point (price, buy-box seller, fulfillment, offer count - buybox_price_points_hot on the "
-            "product tool). USE WHEN the user wants to watch a product's price, buy box or seller count more "
-            "often than our normal cadence: repricing, MAP and buy-box monitoring, a competitor's listing, a "
-            "launch, a deal. Posting the same ASIN again renews it and changes its interval. DON'T USE to read "
-            "data (product, offers): tracking only schedules the reads. COST 0 credits: what a plan sells is "
-            "a daily allowance of tracked snapshots (Solo 2,500 a day = 416 products every 4 hours, Starter "
-            "6,000, Growth 18,000, Standard 40,000, Scale 170,000, Volume 710,000); when the allowance is "
-            "spent the answer says so with the upgrade link, and when only a longer interval fits it is "
-            "granted (granted_interval). RETURNS id, asin, country, status (active / paused / expired / "
-            "stopped), interval, granted_interval, requested_interval, snapshots_per_day, expires_at, in_lane, "
-            "last_snapshot_at, next_due_at, pending (true until the lane picks it up, within ~10 minutes), "
-            "allowance (plan, snapshots_per_day, used, remaining). action=stop ends a tracking at once (by id "
-            "from list_tracked, or by asin + country) and releases its allowance; the row stays listed 30 days as "
-            "stopped. BULK (2026-10-14): asins (up to 1,000) with action=track / stop, and action=sync to make the "
-            "active set equal to a list (dry_run first). STOCK STATES: every read is in_stock (a buy box), "
-            "no_buybox (offers, no featured offer) or out_of_stock (no offers, confirmed twice); "
-            "availability_change / out_of_stock / back_in_stock alert on the transitions, price alerts compare "
-            "buy-box prices only. Paid plans only (the allowance belongs to a subscription). MARKETPLACES us, "
-            "uk, de, ca, au, fr, it, es, jp, mx, br (no Walmart)."
+            "TRACK a product: pin an Amazon ASIN into our hot lane so its all-offers page is "
+            "re-read every hour or every 2, 4, 12 or 24 hours, for as long as the plan is "
+            "active (or a ttl_days you set), with e-mail and webhook alerts on the thresholds "
+            "you give; every read lands in the product's history as a sub-daily buy-box point "
+            "(price, buy-box seller, fulfillment, offer count - buybox_price_points_hot on "
+            "the product tool). USE WHEN the user wants to watch a product's price, buy box "
+            "or seller count more often than our normal cadence: repricing, MAP and buy-box "
+            "monitoring, a competitor's listing, a launch, a deal. Posting the same ASIN "
+            "again renews it and changes its interval. DON'T USE to read data (product, "
+            "offers): tracking only schedules the reads. COST 0 credits: what a plan sells is "
+            "a daily allowance of tracked snapshots (Solo 2,500 a day = 416 products every 4 "
+            "hours, Starter 6,000, Growth 18,000, Standard 40,000, Scale 170,000, Volume "
+            "710,000); when the allowance is spent the answer says so with the upgrade link, "
+            "and when only a longer interval fits it is granted (granted_interval). RETURNS "
+            "id, asin, country, status (active / paused / expired / stopped), interval, "
+            "granted_interval, requested_interval, snapshots_per_day, expires_at, in_lane, "
+            "last_snapshot_at, next_due_at, pending (true until the lane picks it up, within "
+            "~10 minutes), allowance (plan, snapshots_per_day, used, remaining). action=stop "
+            "ends a tracking at once (by id from list_tracked, or by asin + country) and "
+            "releases its allowance; the row stays listed 30 days as stopped. BULK "
+            "(2026-10-14): asins (up to 1,000) with action=track / stop, and action=sync to "
+            "make the active set equal to a list (dry_run first). STOCK STATES: every read is "
+            "in_stock (a buy box), no_buybox (offers, no featured offer) or out_of_stock (no "
+            "offers, confirmed twice); availability_change / out_of_stock / back_in_stock "
+            "alert on the transitions, price alerts compare buy-box prices only. Paid plans "
+            "only (the allowance belongs to a subscription). MARKETPLACES us, uk, de, ca, au, "
+            "fr, it, es, jp, mx, br (no Walmart)."
         ),
         "inputSchema": {
             "type": "object",
@@ -1713,39 +1893,52 @@ TOOLS = [
                     "enum": ["track", "stop", "sync"],
                     "default": "track",
                     "description": (
-                        "track (default) creates or renews the tracking(s); stop ends one or many at once; sync "
-                        "(2026-10-14) makes the key's active set on one marketplace EQUAL to asins: missing ones are "
-                        "created, active ones not listed are stopped, the rest are left as they are - dry_run first "
-                        "to see the counts."
+                        "track (default) creates or renews the tracking(s); stop ends one or "
+                        "many at once; sync (2026-10-14) makes the account's active set on "
+                        "one marketplace EQUAL to asins: missing ones are created, active "
+                        "ones not listed are stopped, the rest are left as they are - dry_run "
+                        "first to see the counts."
                     ),
                 },
                 "id": {
                     "type": "integer",
-                    "description": "With action=stop: the tracking id (from list_tracked). Or give asin + country, or ids / asins.",
+                    "description": (
+                        "With action=stop: the tracking id (from list_tracked). Or give asin "
+                        "+ country, or ids / asins."
+                    ),
                 },
                 "ids": {
                     "type": "array",
                     "items": {"type": "integer"},
-                    "description": "With action=stop: several tracking ids at once (up to 1,000).",
+                    "description": (
+                        "With action=stop: several tracking ids at once (up to 1,000)."
+                    ),
                 },
                 "asin": {
                     "type": "string",
-                    "description": "The product's 10-character Amazon ASIN (one product). Or give asins.",
+                    "description": (
+                        "The product's 10-character Amazon ASIN (one product). Or give asins."
+                    ),
                 },
                 "asins": {
                     "type": "array",
                     "items": {"type": "string"},
                     "description": (
-                        "Bulk (2026-10-14): up to 1,000 ASINs in one call - with action=track all get the same "
-                        "interval / ttl_days / alerts (results[] in input order: created / renewed / refused / "
-                        "invalid, the allowance consumed in input order, never all-or-nothing); with action=stop "
-                        "they are stopped; with action=sync they are the full list the active set becomes."
+                        "Bulk (2026-10-14): up to 1,000 ASINs in one call - with action=track "
+                        "all get the same interval / ttl_days / alerts (results[] in input "
+                        "order: created / renewed / refused / invalid, the allowance consumed "
+                        "in input order, never all-or-nothing); with action=stop they are "
+                        "stopped; with action=sync they are the full list the active set "
+                        "becomes."
                     ),
                 },
                 "dry_run": {
                     "type": "boolean",
                     "default": False,
-                    "description": "With action=sync: return what would be created and stopped without writing.",
+                    "description": (
+                        "With action=sync: return what would be created and stopped without "
+                        "writing."
+                    ),
                 },
                 "country": {
                     "type": "string",
@@ -1758,8 +1951,9 @@ TOOLS = [
                     "enum": ["1h", "2h", "4h", "12h", "24h"],
                     "default": "4h",
                     "description": (
-                        "How often the lane re-reads the all-offers page. A shorter interval costs more of the "
-                        "daily allowance (1h = 24 snapshots a day, 2h = 12, 4h = 6, 12h = 2, 24h = 1)."
+                        "How often the lane re-reads the all-offers page. A shorter interval "
+                        "costs more of the daily allowance (1h = 24 snapshots a day, 2h = 12, "
+                        "4h = 6, 12h = 2, 24h = 1)."
                     ),
                 },
                 "ttl_days": {
@@ -1767,39 +1961,43 @@ TOOLS = [
                     "minimum": 0,
                     "maximum": 365,
                     "description": (
-                        "Optional: stop after this many days (1-365). Omit (or 0) and the tracking runs for as "
-                        "long as the plan is active - a lapsed plan keeps it 7 days, then it pauses and resumes "
-                        "with the plan."
+                        "Optional: stop after this many days (1-365). Omit (or 0) and the "
+                        "tracking runs for as long as the plan is active - a lapsed plan "
+                        "keeps it 7 days, then it pauses and resumes with the plan."
                     ),
                 },
                 "alert_email": {
                     "type": "string",
                     "description": (
-                        "Optional: e-mail alerts for the notify_if thresholds - 'true' for the account's own "
-                        "address, or an address. One e-mail per event, at most 50 a day per tracking. 'false' "
-                        "detaches. Works with or without webhook_url."
+                        "Optional: e-mail alerts for the notify_if thresholds - 'true' for "
+                        "the account's own address, or an address. One e-mail per event, at "
+                        "most 50 a day per tracking. 'false' detaches. Works with or without "
+                        "webhook_url."
                     ),
                 },
                 "webhook_url": {
                     "type": "string",
                     "description": (
-                        "Optional: an https URL Logimu POSTs to when a notify_if threshold fires on a new "
-                        "observation (signed X-Logimu-Signature: sha256=HMAC-SHA256(secret, body); the secret "
-                        "is returned once in webhook_secret). An empty string detaches it."
+                        "Optional: an https URL Logimu POSTs to when a notify_if threshold "
+                        "fires on a new observation (signed X-Logimu-Signature: "
+                        "sha256=HMAC-SHA256(secret, body); the secret is returned once in "
+                        "webhook_secret). An empty string detaches it."
                     ),
                 },
                 "notify_if": {
                     "type": "object",
                     "description": (
-                        "With webhook_url and / or alert_email: the thresholds. price_below / price_above (a "
-                        "buy-box price), price_change_pct (percent move of the buy-box price since the last "
-                        "in-stock read), buybox_seller_change (true: a different seller holds the buy box, "
-                        "between two in-stock reads), offer_count_below / offer_count_above (a count), "
-                        "availability_change (true: the stock STATE changed - in_stock, no_buybox = offers "
-                        "exist but Amazon shows no featured offer, out_of_stock = no offers at all, confirmed "
-                        "by a second read; the event carries both codes), out_of_stock (true: shorthand for "
-                        "a change to out_of_stock), back_in_stock (true: a change to in_stock). {} attaches "
-                        "the webhook and fires on nothing."
+                        "With webhook_url and / or alert_email: the thresholds. price_below / "
+                        "price_above (a buy-box price), price_change_pct (percent move of the "
+                        "buy-box price since the last in-stock read), buybox_seller_change "
+                        "(true: a different seller holds the buy box, between two in-stock "
+                        "reads), offer_count_below / offer_count_above (a count), "
+                        "availability_change (true: the stock STATE changed - in_stock, "
+                        "no_buybox = offers exist but Amazon shows no featured offer, "
+                        "out_of_stock = no offers at all, confirmed by a second read; the "
+                        "event carries both codes), out_of_stock (true: shorthand for a "
+                        "change to out_of_stock), back_in_stock (true: a change to in_stock). "
+                        "{} attaches the webhook and fires on nothing."
                     ),
                     "properties": {
                         "price_below": {"type": "number"},
@@ -1814,7 +2012,20 @@ TOOLS = [
                     },
                 },
             },
-            "anyOf": [{"required": ["asin"]}, {"required": ["asins"]}, {"required": ["id"]}, {"required": ["ids"]}],
+            "anyOf": [
+                {
+                    "required": ["asin"],
+                },
+                {
+                    "required": ["asins"],
+                },
+                {
+                    "required": ["id"],
+                },
+                {
+                    "required": ["ids"],
+                },
+            ],
         },
         "annotations": {
             "title": "Track a product (hot lane)",
@@ -1827,12 +2038,13 @@ TOOLS = [
     {
         "name": "list_tracked",
         "description": (
-            "LIST the products this API key tracks (track_product): each with its status, interval, expiry, "
-            "whether the hot lane has picked it up, the lane's last and next read, plus the plan's tracking "
-            "allowance (snapshots a day: total, used, remaining). USE WHEN the user asks what is being tracked, "
-            "whether a tracking is live, how much allowance is left, or wants to stop one (the id goes to "
-            "DELETE /v1/track/{id} on the REST API). Stopped trackings stay listed for 30 days. COST 0 credits. "
-            "Paid plans only."
+            "LIST the products this API key tracks (track_product): each with its status, "
+            "interval, expiry, whether the hot lane has picked it up, the lane's last and "
+            "next read, plus the plan's tracking allowance (snapshots a day: total, used, "
+            "remaining). USE WHEN the user asks what is being tracked, whether a tracking is "
+            "live, how much allowance is left, or wants to stop one (the id goes to DELETE "
+            "/v1/track/{id} on the REST API). Stopped trackings stay listed for 30 days. COST "
+            "0 credits. Paid plans only."
         ),
         "inputSchema": {
             "type": "object",
@@ -1840,7 +2052,9 @@ TOOLS = [
                 "country": {
                     "type": "string",
                     "enum": ["us", "uk", "de", "ca", "au", "fr", "it", "es", "jp", "mx", "br"],
-                    "description": "Only this marketplace's trackings (default: every marketplace).",
+                    "description": (
+                        "Only this marketplace's trackings (default: every marketplace)."
+                    ),
                 },
                 "status": {
                     "type": "string",
@@ -1863,9 +2077,10 @@ TOOLS = [
                 "events_for": {
                     "type": "integer",
                     "description": (
-                        "A tracking id: return that tracking's webhook events instead of the list - which "
-                        "notify_if threshold fired on which observation, the payload, and the delivery state "
-                        "(pending / delivered / failed, attempts, last error)."
+                        "A tracking id: return that tracking's webhook events instead of the "
+                        "list - which notify_if threshold fired on which observation, the "
+                        "payload, and the delivery state (pending / delivered / failed, "
+                        "attempts, last error)."
                     ),
                 },
             },
@@ -1881,86 +2096,226 @@ TOOLS = [
     {
         "name": "batch",
         "description": (
-            "BATCHES: run any Logimu endpoint over a whole list in one job and come back for the results - the "
-            "same batch API as REST /v1/batches (see https://api.logimu.com/docs#batch). action=estimate prices "
-            "a list before anything is billed (free); action=create makes a named, re-runnable batch (add "
-            "start=true to launch its first run at once); action=run launches a run of an existing batch; "
-            "action=status reports a batch (runs, line stats) or, with run_id, one run's progress (rows done, "
-            "credits so far, queue position); action=results returns completed result rows of a run, mid-run "
-            "too (limit / offset to page; jsonl_url and csv_url give the full download); action=list lists the "
-            "key's batches; action=schedule repeats a batch daily / weekly / monthly (credit_ceiling, "
-            "webhook_url); action=delete removes a batch. USE WHEN the user has more than a handful of ASINs, "
-            "barcodes, search terms, seller ids, brands or seeds to run, wants a daily/weekly refresh, or wants a "
-            "CSV. Kinds: product (asins or gtins - or source=tracked for the ASINs this key tracks, typically "
-            "with include [history_only] at 0.05 a row), search (terms, live SERP), seller / brand / category / "
-            "keywords (paid plans), and every other endpoint as its own kind (shopping, warehouse_search, "
-            "bestsellers, offers, deals, seller_products, seller_brands, seller_network, brand_sellers, brand_network, "
-            "keywords_compare, categories, category_search, brands_top, brands_movers, sellers_top, "
-            "sellers_movers, categories_top) with the endpoint's query parameters in params. Each row bills what "
-            "the endpoint bills; failed, not-found and duplicate rows are never billed; runs are serialized per "
-            "marketplace. COST estimate / status / results / list are free; create + run queue billable rows "
-            "(the estimate is the ceiling). API key required (keyed lanes)."
+            "BATCHES: run any Logimu endpoint over a whole list in one job and come back for "
+            "the results - the same batch API as REST /v1/batches (see "
+            "https://api.logimu.com/docs#batch). action=estimate prices a list before "
+            "anything is billed (free); action=create makes a named, re-runnable batch (add "
+            "start=true to launch its first run at once); action=run launches a run of an "
+            "existing batch; action=status reports a batch (runs, line stats) or, with "
+            "run_id, one run's progress (rows done, credits so far, queue position); "
+            "action=results returns completed result rows of a run, mid-run too (limit / "
+            "offset to page; jsonl_url and csv_url give the full download); action=list lists "
+            "the account's batches; action=schedule repeats a batch daily / weekly / monthly "
+            "(credit_ceiling, webhook_url); action=delete removes a batch. USE WHEN the user "
+            "has more than a handful of ASINs, barcodes, search terms, seller ids, brands or "
+            "seeds to run, wants a daily/weekly refresh, or wants a CSV. Kinds: product "
+            "(asins or gtins - or source=tracked for the ASINs this account tracks, typically "
+            "with include [history_only] at 0.05 a row), search (terms, live SERP), seller / "
+            "brand / category / keywords (paid plans), and every other endpoint as its own "
+            "kind (shopping, warehouse_search, bestsellers, offers, deals, seller_products, "
+            "seller_brands, seller_network, brand_sellers, brand_network, keywords_compare, "
+            "categories, category_search, brands_top, brands_movers, sellers_top, "
+            "sellers_movers, categories_top) with the endpoint's query parameters in params. "
+            "Each row bills what the endpoint bills; failed, not-found and duplicate rows are "
+            "never billed; runs are serialized per marketplace. COST estimate / status / "
+            "results / list are free; create + run queue billable rows (the estimate is the "
+            "ceiling). API key required (keyed lanes)."
         ),
         "inputSchema": {
             "type": "object",
             "properties": {
                 "action": {
                     "type": "string",
-                    "enum": ["estimate", "create", "run", "status", "results", "list", "schedule", "delete"],
+                    "enum": [
+                        "estimate",
+                        "create",
+                        "run",
+                        "status",
+                        "results",
+                        "list",
+                        "schedule",
+                        "delete",
+                    ],
                     "description": "What to do (see the tool description).",
                 },
-                "batch_id": {"type": "integer", "description": "For run / status / results / schedule / delete."},
-                "run_id": {"type": "integer", "description": "For status (one run's progress) and results."},
-                "name": {"type": "string", "description": "create: the batch's name (1-120 characters)."},
+                "batch_id": {
+                    "type": "integer",
+                    "description": "For run / status / results / schedule / delete.",
+                },
+                "run_id": {
+                    "type": "integer",
+                    "description": "For status (one run's progress) and results.",
+                },
+                "name": {
+                    "type": "string",
+                    "description": "create: the batch's name (1-120 characters).",
+                },
                 "kind": {
                     "type": "string",
                     "default": "product",
-                    "description": "estimate / create: product (default), search, seller, brand, category, keywords, or any endpoint kind named in the description.",
+                    "description": (
+                        "estimate / create: product (default), search, seller, brand, "
+                        "category, keywords, or any endpoint kind named in the description."
+                    ),
                 },
                 "country": {
                     "type": "string",
                     "default": "us",
-                    "description": "estimate / create: us, uk, de, ca, au, fr, it, es, jp, mx, br, walmart (search batches Amazon only).",
+                    "description": (
+                        "estimate / create: us, uk, de, ca, au, fr, it, es, jp, mx, br, "
+                        "walmart (search batches Amazon only)."
+                    ),
                 },
                 "mode": {
                     "type": "string",
                     "enum": ["cache", "live", "auto"],
-                    "description": "product / seller batches: cache = warehouse only, live = scrape every row, auto = warehouse when fresh enough (required on create for product batches).",
+                    "description": (
+                        "product / seller batches: cache = warehouse only, live = scrape "
+                        "every row, auto = warehouse when fresh enough (required on create "
+                        "for product batches)."
+                    ),
                 },
                 "max_age_days": {"type": "integer", "minimum": 1, "maximum": 365, "default": 30},
-                "asins": {"type": "array", "items": {"type": "string"}, "description": "product batches: the ASINs (or Walmart item ids)."},
-                "gtins": {"type": "array", "items": {"type": "string"}, "description": "product batches: barcodes instead of ASINs."},
+                "asins": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "product batches: the ASINs (or Walmart item ids).",
+                },
+                "gtins": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "product batches: barcodes instead of ASINs.",
+                },
                 "source": {
                     "type": "string",
                     "enum": ["tracked"],
-                    "description": "product batches: tracked = the ASINs this key tracks on the marketplace instead of a list.",
+                    "description": (
+                        "product batches: tracked = the ASINs this account tracks on the "
+                        "marketplace instead of a list."
+                    ),
                 },
-                "terms": {"type": "array", "items": {"type": "string"}, "description": "search / shopping / warehouse_search / category_search batches: the queries."},
-                "seller_ids": {"type": "array", "items": {"type": "string"}, "description": "seller, seller_products, seller_brands, seller_network batches."},
-                "brands": {"type": "array", "items": {"type": "string"}, "description": "brand, brand_sellers, brand_network batches."},
-                "category_ids": {"type": "array", "items": {"type": "string"}, "description": "category / categories batches (ids, or root); deals batches (deals department ids, or all for the whole deals page)."},
-                "seeds": {"type": "array", "items": {"type": "string"}, "description": "keywords / keywords_compare batches: seed terms."},
-                "urls": {"type": "array", "items": {"type": "string"}, "description": "bestsellers batches: Best Sellers URLs."},
-                "pages": {"type": "integer", "minimum": 1, "maximum": 40, "description": "search batches: pages per term (1-3); ranked-list batches: pages of 25 rows (1-40)."},
-                "params": {"type": "object", "description": "endpoint kinds: the endpoint's query parameters, fixed for every row."},
+                "terms": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": (
+                        "search / shopping / warehouse_search / category_search batches: the "
+                        "queries."
+                    ),
+                },
+                "seller_ids": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": (
+                        "seller, seller_products, seller_brands, seller_network batches."
+                    ),
+                },
+                "brands": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "brand, brand_sellers, brand_network batches.",
+                },
+                "category_ids": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": (
+                        "category / categories batches (ids, or root); deals batches (deals "
+                        "department ids, or all for the whole deals page)."
+                    ),
+                },
+                "seeds": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "keywords / keywords_compare batches: seed terms.",
+                },
+                "urls": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "bestsellers batches: Best Sellers URLs.",
+                },
+                "pages": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 40,
+                    "description": (
+                        "search batches: pages per term (1-3); ranked-list batches: pages of "
+                        "25 rows (1-40)."
+                    ),
+                },
+                "params": {
+                    "type": "object",
+                    "description": (
+                        "endpoint kinds: the endpoint's query parameters, fixed for every "
+                        "row."
+                    ),
+                },
                 "include": {
                     "type": "array",
                     "items": {"type": "string"},
-                    "description": "Extras: history (seller / brand / category / keywords), reviews, used, offer_history, bsr_history, history_only (product), blocks (search).",
+                    "description": (
+                        "Extras: history (seller / brand / category / keywords), reviews, "
+                        "used, offer_history, bsr_history, history_only (product), blocks "
+                        "(search)."
+                    ),
                 },
-                "history_sellers": {"type": "integer", "minimum": 1, "maximum": 50, "default": 10},
-                "history_points": {"type": "integer", "minimum": 1, "maximum": 20000, "default": 500},
-                "start": {"type": "boolean", "default": False, "description": "create: also launch the first run at once."},
+                "history_sellers": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 50,
+                    "default": 10,
+                },
+                "history_points": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 20000,
+                    "default": 500,
+                },
+                "start": {
+                    "type": "boolean",
+                    "default": False,
+                    "description": "create: also launch the first run at once.",
+                },
                 "schedule": {
                     "type": "string",
                     "enum": ["none", "daily", "weekly", "monthly"],
-                    "description": "schedule: how often the batch re-runs (none stops the schedule).",
+                    "description": (
+                        "schedule: how often the batch re-runs (none stops the schedule)."
+                    ),
                 },
-                "schedule_enabled": {"type": "boolean", "default": True, "description": "schedule: pause without deleting."},
-                "credit_ceiling": {"type": "number", "description": "schedule: a firing whose fresh estimate exceeds this does not run (email instead); default 2x the estimate."},
-                "webhook_url": {"type": "string", "description": "schedule: POSTed on run completion / pause, HMAC-SHA256 signed; the secret is returned once."},
-                "limit": {"type": "integer", "minimum": 1, "maximum": 200, "default": 50, "description": "results: rows to return (page with offset; the download URLs carry everything)."},
-                "offset": {"type": "integer", "minimum": 0, "default": 0, "description": "results: rows to skip."},
+                "schedule_enabled": {
+                    "type": "boolean",
+                    "default": True,
+                    "description": "schedule: pause without deleting.",
+                },
+                "credit_ceiling": {
+                    "type": "number",
+                    "description": (
+                        "schedule: a firing whose fresh estimate exceeds this does not run "
+                        "(email instead); default 2x the estimate."
+                    ),
+                },
+                "webhook_url": {
+                    "type": "string",
+                    "description": (
+                        "schedule: POSTed on run completion / pause, HMAC-SHA256 signed; the "
+                        "secret is returned once."
+                    ),
+                },
+                "limit": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 200,
+                    "default": 50,
+                    "description": (
+                        "results: rows to return (page with offset; the download URLs carry "
+                        "everything)."
+                    ),
+                },
+                "offset": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "default": 0,
+                    "description": "results: rows to skip.",
+                },
             },
             "required": ["action"],
         },
@@ -1975,13 +2330,17 @@ TOOLS = [
     {
         "name": "account",
         "description": (
-            "ACCOUNT: the calling key's balance, plan, 30-day usage by endpoint and its product-tracking allowance "
-            "(snapshots a day: total, used, remaining) - the same as REST GET /v1/account. USE WHEN the user asks "
-            "how many credits are left, what a job will leave, what the key has been used for, or how much "
-            "tracking room there is. COST free, never billed. API key required (keyed lanes); without one, nothing "
-            "to report."
+            "ACCOUNT: the account's balance, plan, 30-day usage by endpoint and its "
+            "product-tracking allowance (snapshots a day: total, used, remaining) - the same "
+            "as REST GET /v1/account. USE WHEN the user asks how many credits are left, what "
+            "a job will leave, what the key has been used for, or how much tracking room "
+            "there is. COST free, never billed. API key required (keyed lanes); without one, "
+            "nothing to report."
         ),
-        "inputSchema": {"type": "object", "properties": {}},
+        "inputSchema": {
+            "type": "object",
+            "properties": {},
+        },
         "annotations": {
             "title": "Account balance and usage",
             "readOnlyHint": True,

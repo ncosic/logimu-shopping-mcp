@@ -4,7 +4,7 @@
 
 AI assistants are great at comparing products — and terrible at knowing today's price, what's actually in stock, and which "bestseller" is a relabeled generic. This MCP connector fixes that: your assistant gets **observed Amazon (US, UK, DE, CA, AU, FR, IT, ES, JP, MX, BR) and Walmart US data** — current prices, live stock, real ratings, price/BSR history, and ranked product shortlists — from a continuously refreshed warehouse of 17M+ tracked products.
 
-**Free, no signup: 30 queries per day.**
+**Free, no signup: 30 shopping searches per day. Every other tool needs a Logimu plan (from $19/month).**
 
 ```
 https://api.logimu.com/mcp
@@ -14,7 +14,7 @@ https://api.logimu.com/mcp
 
 | Client | How |
 |---|---|
-| **Claude** (claude.ai / desktop / mobile) | Settings → Connectors → Add custom connector → paste the URL above. **Authentication:** *Sign in now* if you have a Logimu plan (every tool, metered on your plan; OAuth, the connector never sees your key), or keep the pre-selected *No sign-in* for the free tools. **OAuth client:** keep *Use Claude's published identity*. Claude can't change this choice later: remove the connector and add it again. |
+| **Claude** (claude.ai / desktop / mobile) | Settings → Connectors → Add custom connector → paste the URL above. **Authentication:** *Sign in now* if you have a Logimu plan (every tool, metered on your plan; OAuth, the connector never sees your key), or keep the pre-selected *No sign-in* for the free `shopping` tool only. **OAuth client:** keep *Use Claude's published identity*. Claude can't change this choice later: remove the connector and add it again. |
 | **Claude Code** | `claude mcp add --transport http logimu https://api.logimu.com/mcp`, then `/mcp` to sign in when a paid tool asks, or `--header "Authorization: Bearer sk_live_…"` to pass the key directly |
 | **ChatGPT** (developer mode), Cursor, VS Code, anything MCP | Add the same URL as a remote (Streamable HTTP) server. |
 
@@ -28,9 +28,9 @@ Then ask things like:
 
 | Tool | Use when | Returns | Lane |
 |---|---|---|---|
-| `shopping` | "best X", "find me Y under $Z" — you want a shortlist | Ranked, grouped products (category or Budget/Mid/Premium tiers) with real ratings, prices, stock, `observed_at` stamps + brand facets, in ~100ms | Free: 1 of 30 daily |
-| `product` | You have a specific ASIN/item — "good buy?", "price history?", "who sells this?" | Current snapshot + intelligence blocks: 30-day price/stock change events, all-seller offer table, brand stats; full price, rank and buy-box histories with a key (included in the record), or `history_only` for the series alone (0.05 credit) | Free: 1 of 30 daily |
-| `search` | Filtered structured lists — price/rating/review/BSR/FBA filters, sorting | Up to 25 rows on the free lane, across all 11 Amazon marketplaces plus Walmart US | Free: 1 of 30 daily |
+| `shopping` | "best X", "find me Y under $Z" — you want a shortlist | Ranked, grouped products (category or Budget/Mid/Premium tiers) with real ratings, prices, stock, `observed_at` stamps + brand facets, in ~100ms | Free: 1 of 30 daily, without `detail`; plan: 2 credits, 5 with `detail` |
+| `product` | You have a specific ASIN/item — "good buy?", "price history?", "who sells this?" | Current snapshot + intelligence blocks: 30-day price/stock change events, all-seller offer table, brand stats; full price, rank and buy-box histories with a key (included in the record), or `history_only` for the series alone (0.05 credit) | Paid plan: 0.5 credit from cache, 1 live |
+| `search` | Filtered structured lists — price/rating/review/BSR/FBA filters, sorting | Up to 100 rows, across all 11 Amazon marketplaces plus Walmart US | Paid plan: 1 credit per 25 rows |
 | `serp` | The live Amazon search-results page for a query, right now | Organic grid, sponsored and video blocks, refinements, pagination — a real fetch, seconds | API key: 1 credit per page fetched |
 | `bestsellers` | What sells best in a category right now; Amazon's best-seller category tree | Up to 100 products in Amazon's rank order, the category's breadcrumb name and its subcategories; a root URL or a country alone returns the top-level categories. A real fetch (seconds), cached up to 30 min | API key: 1 credit per page of 50 (top 100 = 2), root list free |
 | `offers` | Who sells a product right now, at what price; the cheapest new or used offer; the buy-box winner this minute | Every offer on Amazon's offers page (every page): seller and seller id, price, shipping, condition, buy box, FBA / FBM / Amazon, Prime, delivery promise and the seller's feedback, by ASIN or barcode. A real fetch (seconds); a no-offers answer is confirmed by a second, independent fetch | API key: 0.5 credit when an offer is listed; no offers, a miss or a failed fetch free |
@@ -43,7 +43,7 @@ Then ask things like:
 | `keyword_rankings` | Page 1 of Amazon US search as last observed (about weekly) for head search terms: the organic order with product facts and each product's latest buy box, the sponsored units in the page HTML, the Overall Pick holder, who holds the page by brand and seller, and what changed since the previous observation; `history` = the weekly observations. Dated observations, never volume figures | 1 credit a keyword, +0.5 with history | Paid plan |
 | `product_keywords` | Reverse ASIN on Amazon US: every observed keyword a product shows up for on page 1, with its rank; `asins` (up to 10) compares it with competitors and `gaps` keeps the keywords where they appear and it does not; `history` = its rank over time. Head search terms and page 1 only | 1 credit per 25 keywords per ASIN, +0.5 with history | Paid plan |
 
-The paid-plan tools (`seller`, `brand`, `category`, `market_lists`, `keywords`, `keyword_rankings`, `product_keywords`) appear in `tools/list` only for keys on a paid plan; the stub lists the whole catalog so directories can see it. Every derived figure is an observed count or share from Logimu's own data — never an estimate — and "observed since" is the data horizon, not a founding date. Keyword answers are Amazon's own suggestion ranking as observed — positions within one list, never volume figures; the observed page-1 positions of products are `keyword_rankings` and `product_keywords`.
+The paid-plan tools (`product`, `search`, `seller`, `brand`, `category`, `market_lists`, `keywords`, `keyword_rankings`, `product_keywords`, `track_product`, `list_tracked`) appear in `tools/list` only for keys on a paid plan; the stub lists the whole catalog so directories can see it. Every derived figure is an observed count or share from Logimu's own data — never an estimate — and "observed since" is the data horizon, not a founding date. Keyword answers are Amazon's own suggestion ranking as observed — positions within one list, never volume figures; the observed page-1 positions of products are `keyword_rankings` and `product_keywords`.
 
 Full REST API reference (same engine, same data): [api.logimu.com/docs](https://api.logimu.com/docs)
 
@@ -51,8 +51,8 @@ Full REST API reference (same engine, same data): [api.logimu.com/docs](https://
 
 | | Free (no signup) | Paid plan (API key) |
 |---|---|---|
-| Queries | 30 / day | Credit-metered — subscriptions from $19/month, one-time credit packs, unconditional 14-day money-back |
-| Data | Warehouse `shopping` / `product` / `search`, cached (fresh, timestamped) | + `mode=live` on-demand fetches, `serp`, `bestsellers`, `offers`, `deals`, seller profiles, brand / category intelligence and market lists, batch jobs on the REST API |
+| Queries | 30 `shopping` searches / day | Credit-metered — subscriptions from $19/month, one-time credit packs, unconditional 14-day money-back |
+| Data | `shopping`: ranked shortlists from the warehouse (fresh, timestamped), without `detail` | + `product` records with history, `search`, `shopping` `detail`, `mode=live` on-demand fetches, `serp`, `bestsellers`, `offers`, `deals`, seller profiles, brand / category intelligence and market lists, batch jobs on the REST API |
 | Signup | None | [api.logimu.com](https://api.logimu.com) |
 
 - Every record carries an `observed_at` timestamp — data is **observed** from our warehouse, not a live retailer feed.
