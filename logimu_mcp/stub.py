@@ -16,7 +16,7 @@ HOSTED = "https://api.logimu.com/mcp"
 SERVER_INFO = {
     "name": "Logimu",
     "title": "Logimu — Amazon & Walmart Shopping Data",
-    "version": "1.12.0",
+    "version": "1.13.0",
     "websiteUrl": "https://api.logimu.com",
 }
 
@@ -1737,12 +1737,12 @@ TOOLS = [
     {
         "name": "keyword_rankings",
         "description": (
-            "Page 1 of Amazon US search for a keyword, as Logimu last OBSERVED it (head "
-            "search terms taken from Amazon's own autocomplete, each observed about once a "
-            "week, all departments, one US delivery ZIP): the organic order with product "
-            "facts (title, brand, price, rating) and each product's latest observed buy box "
-            "(seller, AMZ / FBA / FBM, other sellers), the sponsored units present in the "
-            "page HTML (Sponsored Brands banners and videos, server-rendered Sponsored "
+            "Page 1 of Amazon search for a keyword, as Logimu last OBSERVED it (head search "
+            "terms taken from Amazon's own autocomplete, each observed about once a week, all "
+            "departments; amazon.com from one US delivery ZIP): the organic order with "
+            "product facts (title, brand, price, rating) and each product's latest observed "
+            "buy box (seller, AMZ / FBA / FBM, other sellers), the sponsored units present in "
+            "the page HTML (Sponsored Brands banners and videos, server-rendered Sponsored "
             "Products; ones Amazon loads later by JavaScript are counted as slots only), the "
             "Overall Pick (Amazon's Choice) holder, Amazon's result count, page_summary "
             "(organic slots by brand and by buy-box seller, Amazon's own buy boxes, FBA / "
@@ -1750,15 +1750,15 @@ TOOLS = [
             "1 since the previous observation, all dated. history=true adds every weekly "
             "observation and the rank series of the page's products. USE WHEN the user asks "
             "which products, brands or sellers hold page 1 for a search term, who advertises "
-            "on it, or how the page changed. Amazon US and UK. NOT volume figures (Amazon "
-            "publishes none for search terms and none is implied) and NOT live: a dated "
-            "weekly sample, and the same search minutes apart differs by a few products - for "
-            "a live page use the serp tool, for what Amazon suggests for a seed the keywords "
-            "tool, for the keywords a product shows up for product_keywords. A keyword "
-            "outside the observed set is free (keyword_not_found). COST: paid plan required "
-            "(listed only for keys on a paid plan); 1 credit (+0.5 with history when more "
-            "than one observation exists). Counts against the derived daily cap (default "
-            "2,000 calls per account)."
+            "on it, or how the page changed. All 11 Amazon marketplaces (country). NOT volume "
+            "figures (Amazon publishes none for search terms and none is implied) and NOT "
+            "live: a dated weekly sample, and the same search minutes apart differs by a few "
+            "products - for a live page use the serp tool, for what Amazon suggests for a "
+            "seed the keywords tool, for the keywords a product shows up for "
+            "product_keywords. A keyword outside the observed set is free "
+            "(keyword_not_found). COST: paid plan required (listed only for keys on a paid "
+            "plan); 1 credit (+0.5 with history when more than one observation exists). "
+            "Counts against the derived daily cap (default 2,000 calls per account)."
         ),
         "inputSchema": {
             "type": "object",
@@ -1772,11 +1772,13 @@ TOOLS = [
                 },
                 "country": {
                     "type": "string",
-                    "enum": ["us", "uk"],
+                    "enum": ["us", "uk", "de", "ca", "au", "fr", "it", "es", "jp", "mx", "br"],
                     "default": "us",
                     "description": (
-                        "us (amazon.com) or uk (amazon.co.uk): the marketplaces the map "
-                        "covers."
+                        "Amazon marketplace: us (amazon.com, default), uk, de, ca, au, fr, "
+                        "it, es, jp, mx or br, each searched in its own language. us and uk "
+                        "are read in full about weekly; the other nine started 2026-10-29 / "
+                        "10-30 and fill in week by week (coverage says how far)."
                     ),
                 },
                 "history": {
@@ -1801,25 +1803,25 @@ TOOLS = [
     {
         "name": "product_keywords",
         "description": (
-            "REVERSE ASIN on Amazon US and UK: every observed keyword (head search terms "
-            "taken from Amazon's own autocomplete, page 1 observed about once a week) whose "
-            "latest page 1 shows the product, organically with its rank or in a sponsored "
-            "unit present in the page HTML, with the keyword's result count, the Overall Pick "
-            "badge and the date; organic first, best rank first, with totals (keywords, "
-            "organic, top 10, sponsored, Overall Pick). Pass asins (up to 10, the product "
-            "first) to COMPARE it with competitors: each keyword row adds every competitor's "
-            "organic rank, asins_on_page and gap (a competitor on page 1 organically, the "
-            "product not); gaps=true keeps only those. history=true adds the first product's "
-            "rank on each keyword over time. USE WHEN the user asks which keywords a product "
-            "(theirs or a competitor's) shows up for, where competitors are visible and they "
-            "are not, or how a product's position on a term moved. Coverage is head search "
-            "terms and page 1 only (the coverage block gives the counts), so a product shows "
-            "fewer keywords than a full search index would. NOT volume figures and NOT live: "
-            "dated weekly samples. A product not seen on any observed page is free "
-            "(asin_not_found). COST: paid plan required (listed only for keys on a paid "
-            "plan); 1 credit per 25 keywords returned per ASIN compared (+0.5 with history "
-            "when a keyword has more than one observation). Counts against the derived daily "
-            "cap (default 2,000 calls per account)."
+            "REVERSE ASIN on Amazon (11 marketplaces, country): every observed keyword (head "
+            "search terms taken from Amazon's own autocomplete, page 1 observed about once a "
+            "week) whose latest page 1 shows the product, organically with its rank or in a "
+            "sponsored unit present in the page HTML, with the keyword's result count, the "
+            "Overall Pick badge and the date; organic first, best rank first, with totals "
+            "(keywords, organic, top 10, sponsored, Overall Pick). Pass asins (up to 10, the "
+            "product first) to COMPARE it with competitors: each keyword row adds every "
+            "competitor's organic rank, asins_on_page and gap (a competitor on page 1 "
+            "organically, the product not); gaps=true keeps only those. history=true adds the "
+            "first product's rank on each keyword over time. USE WHEN the user asks which "
+            "keywords a product (theirs or a competitor's) shows up for, where competitors "
+            "are visible and they are not, or how a product's position on a term moved. "
+            "Coverage is head search terms and page 1 only (the coverage block gives the "
+            "counts), so a product shows fewer keywords than a full search index would. NOT "
+            "volume figures and NOT live: dated weekly samples. A product not seen on any "
+            "observed page is free (asin_not_found). COST: paid plan required (listed only "
+            "for keys on a paid plan); 1 credit per 25 keywords returned per ASIN compared "
+            "(+0.5 with history when a keyword has more than one observation). Counts against "
+            "the derived daily cap (default 2,000 calls per account)."
         ),
         "inputSchema": {
             "type": "object",
@@ -1842,11 +1844,13 @@ TOOLS = [
                 },
                 "country": {
                     "type": "string",
-                    "enum": ["us", "uk"],
+                    "enum": ["us", "uk", "de", "ca", "au", "fr", "it", "es", "jp", "mx", "br"],
                     "default": "us",
                     "description": (
-                        "us (amazon.com) or uk (amazon.co.uk): the marketplaces the map "
-                        "covers."
+                        "Amazon marketplace: us (amazon.com, default), uk, de, ca, au, fr, "
+                        "it, es, jp, mx or br, each searched in its own language. us and uk "
+                        "are read in full about weekly; the other nine started 2026-10-29 / "
+                        "10-30 and fill in week by week (coverage says how far)."
                     ),
                 },
                 "placement": {
@@ -1923,7 +1927,7 @@ TOOLS = [
             "~10 minutes), allowance (plan, snapshots_per_day, used, remaining). action=stop "
             "ends a tracking at once (by id from list_tracked, or by asin + country) and "
             "releases its allowance; the row stays listed 30 days as stopped. BULK "
-            "(2026-10-14): asins (up to 1,000) with action=track / stop, and action=sync to "
+            "(2026-10-14): asins (up to 10,000) with action=track / stop, and action=sync to "
             "make the active set equal to a list (dry_run first). STOCK STATES: every read is "
             "in_stock (a buy box), no_buybox (offers, no featured offer) or out_of_stock (no "
             "offers, confirmed twice); availability_change / out_of_stock / back_in_stock "
@@ -1957,7 +1961,7 @@ TOOLS = [
                     "type": "array",
                     "items": {"type": "integer"},
                     "description": (
-                        "With action=stop: several tracking ids at once (up to 1,000)."
+                        "With action=stop: several tracking ids at once (up to 10,000)."
                     ),
                 },
                 "asin": {
@@ -1970,12 +1974,12 @@ TOOLS = [
                     "type": "array",
                     "items": {"type": "string"},
                     "description": (
-                        "Bulk (2026-10-14): up to 1,000 ASINs in one call - with action=track "
-                        "all get the same interval / ttl_days / alerts (results[] in input "
-                        "order: created / renewed / refused / invalid, the allowance consumed "
-                        "in input order, never all-or-nothing); with action=stop they are "
-                        "stopped; with action=sync they are the full list the active set "
-                        "becomes."
+                        "Bulk (2026-10-14): up to 10,000 ASINs in one call - with "
+                        "action=track all get the same interval / ttl_days / alerts "
+                        "(results[] in input order: created / renewed / refused / invalid, "
+                        "the allowance consumed in input order, never all-or-nothing); with "
+                        "action=stop they are stopped; with action=sync they are the full "
+                        "list the active set becomes."
                     ),
                 },
                 "dry_run": {
@@ -2122,6 +2126,13 @@ TOOLS = [
                     "type": "string",
                     "enum": ["active", "paused", "expired", "stopped"],
                     "description": "Only trackings in this state (default: all, newest first).",
+                },
+                "asin": {
+                    "type": "string",
+                    "description": (
+                        "Only these products: one ASIN or up to 500 comma-separated "
+                        "(2026-10-30)."
+                    ),
                 },
                 "limit": {
                     "type": "integer",
