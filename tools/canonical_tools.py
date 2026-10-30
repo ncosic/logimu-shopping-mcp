@@ -2215,7 +2215,7 @@ TOOLS = [
             "action=results returns completed result rows of a run, mid-run too (limit / "
             "offset to page; jsonl_url and csv_url give the full download); action=list lists "
             "the account's batches; action=schedule repeats a batch every 12 hours / daily / "
-            "weekly / monthly (credit_ceiling, webhook_url); action=delete removes a batch. "
+            "weekly / monthly (credit_ceiling, webhook_url, email); action=delete removes a batch. "
             "USE WHEN the user has more than a handful of ASINs, barcodes, search terms, "
             "seller ids, brands or seeds to run, wants a daily/weekly refresh, or wants a "
             "CSV. Kinds: product (asins or gtins - or source=tracked for the ASINs this "
@@ -2421,6 +2421,14 @@ TOOLS = [
                     "description": (
                         "schedule: POSTed on run completion / pause, HMAC-SHA256 signed; the "
                         "secret is returned once."
+                    ),
+                },
+                "email": {
+                    "type": "boolean",
+                    "description": (
+                        "create / schedule: e-mail the account when a run completes or pauses and "
+                        "when a scheduled firing is refused. Default false for batches created here "
+                        "or through the REST API; results are always available programmatically."
                     ),
                 },
                 "limit": {
