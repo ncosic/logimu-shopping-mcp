@@ -1851,7 +1851,7 @@ TOOLS = [
             "rank on each keyword over time. USE WHEN the user asks which keywords a product "
             "(theirs or a competitor's) shows up for, where competitors are visible and they "
             "are not, or how a product's position on a term moved. Coverage is head search "
-            "terms and page 1 only (the coverage block gives the counts), so a product shows "
+            "terms and page 1 only, so a product shows "
             "fewer keywords than a full search index would. NOT volume figures and NOT live: "
             "dated weekly samples. A product not seen on any observed page is free "
             "(asin_not_found). COST: paid plan required (listed only for keys on a paid "
