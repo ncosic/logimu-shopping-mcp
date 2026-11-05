@@ -93,7 +93,10 @@ TOOLS = [
             "whole percentages the page prints), count_by_stars_approx (percent x rating_count, "
             "rounded - approximate), the rating_count and rating of that same page, observed_at "
             "and source (live = the page this call read, cache = the newest stored page that "
-            "showed one); null when no page we read showed one. With offer_history=true every per-seller point also "
+            "showed one); null when no page we read showed one. rating_breakdown_history (also since 2026-11-05) holds "
+            "one such breakdown per observed day, oldest first: {date, percent_by_stars, rating_count, rating, "
+            "observed_at}, every value of a point from one page (the day's newest that showed a histogram); "
+            "history_only carries it too. With offer_history=true every per-seller point also "
             "carries that day's shipping cost, fba and prime, and the answer carries "
             "buybox_price_history (2026-10-09): the lowest buy-box price of every observed "
             "day, oldest first, each point labelled source offers (our offer observations, "
@@ -151,7 +154,7 @@ TOOLS = [
             "from cache with everything included - bsr_history and offer_history too, no "
             "extra charge since 2026-10-10 - and 1 for a live scrape (2 on Walmart); "
             "history_only=true returns just the history series (rank, offers, buy-box price, "
-            "rating_history) for 0.05 credit. Misses and partial scrapes are never billed; a "
+            "rating_history, rating_breakdown_history) for 0.05 credit. Misses and partial scrapes are never billed; a "
             "miss may return a hint (found on another marketplace, or retry with mode=live). "
             "SELLER FEEDBACK (2026-09-18): every response carries seller_ratings - one entry "
             "per seller the answer names (current offers, cheapest new/used, buy-box holder "
@@ -289,8 +292,8 @@ TOOLS = [
                     "type": "boolean",
                     "default": False,
                     "description": (
-                        "Return ONLY the stored history series - bsr_history, offer_history "
-                        "and buybox_price_history - with no snapshot, content or seller "
+                        "Return ONLY the stored history series - bsr_history, offer_history, "
+                        "buybox_price_history, rating_history and rating_breakdown_history - with no snapshot, content or seller "
                         "table, for 0.05 credit. USE WHEN the user tracks price or rank over "
                         "time for many products and does not need the current listing. Amazon "
                         "marketplaces only, served from stored observations (mode=live is "
