@@ -59,6 +59,10 @@ should stay in free lane with no possibility of detailed results flag"); their C
 1.12.0 (serp zip + store at a US ZIP, offers zip billing on not_deliverable_verified, stock.state null). Diff on
 resync: 8 of 18 tools differed, none added or removed. Guard: brand-intel tests/unit/test_mcp_catalog_rendered.py
 fails when mcp.py's block is not what gen.py renders.
+2026-11-23: resynced FROM the hosted _TOOLS again (live wins; Nick: "do a sync pass on mcp stub repo"): hosted
+1.24.0 against this file's 1.13.7. Since 11-08 the catalog had been edited into mcp.py by hand: five web tools
+(web_offers, web_identify, web_product, web_page, web_history; 1.18.0-1.23.0), the 6h tracking interval and the
+6h batch schedule (P202, 1.24.0), and description updates on the others. 25 -> 30 tools.
 """
 TOOLS = [
     {
@@ -75,65 +79,67 @@ TOOLS = [
             "USE to discover products from a keyword (use shopping) or to pull a filtered "
             "list (use search). RETURNS current price, BSR, rating, review count, stock, "
             "buy-box seller and seller count, plus an observed_at freshness stamp, full "
-            "price_history and stock_history back to first observation, change events tagged "
-            "with the buy-box seller at each change, the current all-seller offer table with "
-            "30-day buy-box days (each seller row carries fulfillment AMZ/FBA/FBM and "
-            "delivery days), a fulfillment block (buy-box AMZ/FBA/FBM, offer counts, whether "
-            "Amazon sells and holds the buy box, buy-box delivery days and dispatch latency), "
-            "the bought-past-month badge (measured aggregate buyer behavior, not an "
-            "estimate), brand stats, and since 2026-09-27: dimensions (item weight + package "
-            "size as printed plus parsed metric weight_g / *_cm), deal_history (list price, "
-            "savings and coupon/promotion text as segments of consecutive observations, with "
-            "a current view), bought_past_month_history (the badge over time; null = page "
-            "seen without a badge), rating_history (rating_count + rating per observed day "
-            "with ratings_gained_30d/90d), and variation_coverage (the variation matrix as "
-            "last seen with, per child, whether we track it and its latest 30-day price - "
-            "current state, not history). Since 2026-11-05 every Amazon answer also carries "
-            "rating_breakdown, Amazon's star histogram: percent_by_stars (keys 5 to 1, the "
-            "whole percentages the page prints), count_by_stars_approx (percent x rating_count, "
-            "rounded - approximate), rating_count and rating (the total and average the page prints with the "
-            "histogram), listing_rating_count and listing_rating (the count and average at the top of that same "
-            "page; on some variation families the histogram covers more ratings, since 2026-11-08), observed_at "
-            "and source (live = the page this call read, cache = the newest stored page that "
-            "showed one); null when no page we read showed one. rating_breakdown_history (also since 2026-11-05) holds "
-            "one such breakdown per observed day, oldest first: {date, percent_by_stars, rating_count, rating, "
-            "listing_rating_count, listing_rating, observed_at}, every value of a point from one page (the day's "
-            "newest that showed a histogram); "
-            "history_only carries it too. With offer_history=true every per-seller point also "
-            "carries that day's shipping cost, fba and prime, and the answer carries "
-            "buybox_price_history (2026-10-09): the lowest buy-box price of every observed "
-            "day, oldest first, each point labelled source offers (our offer observations, "
-            "every Amazon marketplace, from 2026-04-17) or daily_snapshot (the legacy daily "
-            "snapshot, Amazon US back to Nov 2023) - the deepest price series we hold; a gap "
-            "between two dates is a stretch we did not observe. Since 2026-10-14 every Amazon "
-            "answer also carries buybox_price_points_hot: every all-offers-page observation "
-            "of the last 30 days, newest last, {ts, price, seller, seller_id, fulfillment, "
-            "offer_count} - sub-daily for ASINs in our hot lane, which refreshes popular and "
-            "customer-polled ASINs every few hours (null when none; history_only carries it "
-            "too) - and tracking: the lane's state for the ASIN (hot, interval_min, "
-            "last_fetched_at, read = which page it reads) or null. Since 2026-10-29 every "
-            "Amazon answer also carries bsr_points_hot: every sales-rank reading of the last "
-            "30 days, newest last, {observed_at, bsr, bsr_category, bsr_leaf, "
-            "bsr_leaf_category}, one per product-page read that showed a rank (bsr_history "
-            "keeps one per day; null when none; history_only carries it too). Since "
-            "2026-10-15 Amazon answers carry buybox_condition (new | used | null = no "
-            "featured offer; with buybox_condition_source product_page | offers_page and "
-            "buybox_condition_detail: the pinned offer's condition text, used_only_buybox, or "
-            "the used storefront's name - Amazon Resale / Amazon Warehouse win the buy box "
-            "like any seller and read as Amazon retail before), buybox_state (what the lane's "
-            "newest all-offers read saw: in_stock | no_buybox | out_of_stock, with "
-            "buybox_state_observed_at and stock_state_source when it decided stock_state; "
-            "stock_state, in_stock and out_of_stock always agree), and on LIVE answers "
-            "variation_status (page_is_sibling | page_is_other | null) + page_asin when "
-            "Amazon served another ASIN's page for the one asked (cache answers: null); "
-            "unit_price on LIVE answers = Amazon's per-unit price of price where the page "
-            "prints one ({symbol, value, currency, raw, per}; null otherwise); with "
-            "full_offers, offers_complete (false = the offers pages stopped part-way, "
-            "offers_partial_reason says why). Amazon answers also carry the observed "
-            "product-page content, the byline (authors[] with role_norm "
-            "author/narrator/illustrator/editor/translator + author for books, audiobooks, "
-            "music; 2026-09-29), the book/media format (format, format_norm, and formats[]: "
-            "every format of the book, each its own ASIN with price and membership "
+            "price_history and stock_history over our recent observation window (months; the "
+            "full-depth daily buy-box price is buybox_price_history, offer_history=true), "
+            "change events tagged with the buy-box seller at each change, the current "
+            "all-seller offer table with 30-day buy-box days (each seller row carries "
+            "fulfillment AMZ/FBA/FBM and delivery days), a fulfillment block (buy-box "
+            "AMZ/FBA/FBM, offer counts, whether Amazon sells and holds the buy box, buy-box "
+            "delivery days and dispatch latency), the bought-past-month badge (measured "
+            "aggregate buyer behavior, not an estimate), brand stats, and since 2026-09-27: "
+            "dimensions (item weight + package size as printed plus parsed metric weight_g / "
+            "*_cm), deal_history (list price, savings and coupon/promotion text as segments "
+            "of consecutive observations, with a current view), bought_past_month_history "
+            "(the badge over time; null = page seen without a badge), rating_history "
+            "(rating_count + rating per observed day with ratings_gained_30d/90d), and "
+            "variation_coverage (the variation matrix as last seen with, per child, whether "
+            "we track it and its latest 30-day price - current state, not history). Since "
+            "2026-11-05 every Amazon answer also carries rating_breakdown, Amazon's star "
+            "histogram: percent_by_stars (keys 5 to 1, the whole percentages the page "
+            "prints), count_by_stars_approx (percent x rating_count, rounded - approximate), "
+            "rating_count and rating (the total and average the page prints with the "
+            "histogram), listing_rating_count and listing_rating (the count and average at "
+            "the top of that same page; on some variation families the histogram covers more "
+            "ratings, since 2026-11-08), observed_at and source (live = the page this call "
+            "read, cache = the newest stored page that showed one); null when no page we read "
+            "showed one. rating_breakdown_history (also since 2026-11-05) holds one such "
+            "breakdown per observed day, oldest first: {date, percent_by_stars, rating_count, "
+            "rating, listing_rating_count, listing_rating, observed_at}, every value of a "
+            "point from one page (the day's newest that showed a histogram); history_only "
+            "carries it too. With offer_history=true every per-seller point also carries that "
+            "day's shipping cost, fba and prime, and the answer carries buybox_price_history "
+            "(2026-10-09): the lowest buy-box price of every observed day, oldest first, each "
+            "point labelled source offers (our offer observations, every Amazon marketplace, "
+            "from 2026-04-17) or daily_snapshot (the legacy daily snapshot, Amazon US back to "
+            "Nov 2023) - the deepest price series we hold; a gap between two dates is a "
+            "stretch we did not observe. Since 2026-10-14 every Amazon answer also carries "
+            "buybox_price_points_hot: every all-offers-page observation of the last 30 days, "
+            "newest last, {ts, price, seller, seller_id, fulfillment, offer_count} - "
+            "sub-daily for ASINs in our hot lane, which refreshes popular and customer-polled "
+            "ASINs every few hours (null when none; history_only carries it too) - and "
+            "tracking: the lane's state for the ASIN (hot, interval_min, last_fetched_at, "
+            "read = which page it reads) or null. Since 2026-10-29 every Amazon answer also "
+            "carries bsr_points_hot: every sales-rank reading of the last 30 days, newest "
+            "last, {observed_at, bsr, bsr_category, bsr_leaf, bsr_leaf_category}, one per "
+            "product-page read that showed a rank (bsr_history keeps one per day; null when "
+            "none; history_only carries it too). Since 2026-10-15 Amazon answers carry "
+            "buybox_condition (new | used | null = no featured offer; with "
+            "buybox_condition_source product_page | offers_page and buybox_condition_detail: "
+            "the pinned offer's condition text, used_only_buybox, or the used storefront's "
+            "name - Amazon Resale / Amazon Warehouse win the buy box like any seller and read "
+            "as Amazon retail before), buybox_state (what the lane's newest all-offers read "
+            "saw: in_stock | no_buybox | out_of_stock, with buybox_state_observed_at and "
+            "stock_state_source when it decided stock_state; stock_state, in_stock and "
+            "out_of_stock always agree), and on LIVE answers variation_status "
+            "(page_is_sibling | page_is_other | null) + page_asin when Amazon served another "
+            "ASIN's page for the one asked (cache answers: null); unit_price on LIVE answers "
+            "= Amazon's per-unit price of price where the page prints one ({symbol, value, "
+            "currency, raw, per}; null otherwise); with full_offers, offers_complete (false = "
+            "the offers pages stopped part-way, offers_partial_reason says why). Amazon "
+            "answers also carry the observed product-page content, the byline (authors[] with "
+            "role_norm author/narrator/illustrator/editor/translator + author for books, "
+            "audiobooks, music; 2026-09-29), the book/media format (format, format_norm, and "
+            "formats[]: every format of the book, each its own ASIN with price and membership "
             "subscription_price, plus family_asin; 2026-09-30) block: description (with "
             "description_source), feature_bullets, images, breadcrumbs, variations with "
             "variation_count and parent_asin, stamped content_observed_at — "
@@ -144,27 +150,37 @@ TOOLS = [
             "carries a data_source field naming the marketplace the numbers were observed on "
             "(e.g. 'amazon US marketplace — observed listings') — attribute prices to that "
             "source when presenting them; they are marketplace listings, not manufacturer or "
-            "site-wide prices. MARKETPLACES us, uk, de, ca, au, fr, it, es, jp, mx, br, "
-            "walmart. Walmart takes a numeric item ID (or gtin= with the item's UPC) and "
-            "returns the intelligence blocks plus its listing content: image_url, "
-            "description, breadcrumbs, highlights (spec name/value pairs), warnings, upc, "
-            "rating/review_count, was_price, in_stock, and shipping_cost per seller; "
-            "mode=live reads the walmart.com page now (2 credits, typically 8-15 s, one page: "
-            "the cheapest other seller is not fetched; location names the store it was priced "
-            "for) and mode=auto serves our record when observed within max_age_days, else "
-            "reads live. COST paid plans only: the user signs in with their Logimu account or "
-            "passes an API key (the no-signup lane has the shopping tool only). 0.5 credits "
-            "from cache with everything included - bsr_history and offer_history too, no "
-            "extra charge since 2026-10-10 - and 1 for a live scrape (2 on Walmart); "
-            "history_only=true returns just the history series (rank, offers, buy-box price, "
-            "rating_history, rating_breakdown_history) for 0.05 credit. Misses and partial scrapes are never billed; a "
-            "miss may return a hint (found on another marketplace, or retry with mode=live). "
-            "SELLER FEEDBACK (2026-09-18): every response carries seller_ratings - one entry "
-            "per seller the answer names (current offers, cheapest new/used, buy-box holder "
-            "and, with offer_history, every historical seller) with seller_positive_pct, "
-            "seller_feedback_count, seller_rating and observed_at from a nightly "
-            "seller-feedback table; offer_history.sellers[] rows carry the same fields "
-            "directly. Amazon's own offers have no feedback. Not billed."
+            "site-wide prices. SAME PRODUCT ELSEWHERE (2026-11-13, included in the price): "
+            "matches lists it on other marketplaces, matched by the barcode printed on both "
+            "listings - an Amazon answer lists the Walmart items, a Walmart answer lists the "
+            "ASINs per Amazon marketplace - each a product row (price in that marketplace's "
+            "currency, price_observed_at, product_url) with match {matched_by barcode, "
+            "confidence high|medium, match_type identical|different_pack, pack_ratio from the "
+            "listings' own text (24 = a 24-pack of this product), evidence}; Amazon answers "
+            "also carry also_observed_on: the other Amazon marketplaces where we hold the "
+            "ASIN, with that marketplace's price and dates (observed there, not a claim that "
+            "it sells there). [] = none found, null = the lookup did not complete. "
+            "MARKETPLACES us, uk, de, ca, au, fr, it, es, jp, mx, br, walmart. Walmart takes "
+            "a numeric item ID (or gtin= with the item's UPC) and returns the intelligence "
+            "blocks plus its listing content: image_url, description, breadcrumbs, highlights "
+            "(spec name/value pairs), warnings, upc, rating/review_count, was_price, "
+            "in_stock, and shipping_cost per seller; mode=live reads the walmart.com page now "
+            "(2 credits, typically 8-15 s, one page: the cheapest other seller is not "
+            "fetched; location names the store it was priced for) and mode=auto serves our "
+            "record when observed within max_age_days, else reads live. COST paid plans only: "
+            "the user signs in with their Logimu account or passes an API key (the no-signup "
+            "lane has the shopping tool only). 0.5 credits from cache with everything "
+            "included - bsr_history and offer_history too, no extra charge since 2026-10-10 - "
+            "and 1 for a live scrape (2 on Walmart); history_only=true returns just the "
+            "history series (rank, offers, buy-box price, rating_history, "
+            "rating_breakdown_history) for 0.05 credit. Misses and partial scrapes are never "
+            "billed; a miss may return a hint (found on another marketplace, or retry with "
+            "mode=live). SELLER FEEDBACK (2026-09-18): every response carries seller_ratings "
+            "- one entry per seller the answer names (current offers, cheapest new/used, "
+            "buy-box holder and, with offer_history, every historical seller) with "
+            "seller_positive_pct, seller_feedback_count, seller_rating and observed_at from a "
+            "nightly seller-feedback table; offer_history.sellers[] rows carry the same "
+            "fields directly. Amazon's own offers have no feedback. Not billed."
         ),
         "inputSchema": {
             "type": "object",
@@ -296,11 +312,12 @@ TOOLS = [
                     "default": False,
                     "description": (
                         "Return ONLY the stored history series - bsr_history, offer_history, "
-                        "buybox_price_history, rating_history and rating_breakdown_history - with no snapshot, content or seller "
-                        "table, for 0.05 credit. USE WHEN the user tracks price or rank over "
-                        "time for many products and does not need the current listing. Amazon "
-                        "marketplaces only, served from stored observations (mode=live is "
-                        "refused); needs a paid-plan API key (from $19/mo)."
+                        "buybox_price_history, rating_history and rating_breakdown_history - "
+                        "with no snapshot, content or seller table, for 0.05 credit. USE WHEN "
+                        "the user tracks price or rank over time for many products and does "
+                        "not need the current listing. Amazon marketplaces only, served from "
+                        "stored observations (mode=live is refused); needs a paid-plan API "
+                        "key (from $19/mo)."
                     ),
                 },
                 "track": {
@@ -318,22 +335,25 @@ TOOLS = [
                 },
                 "interval": {
                     "type": "string",
-                    "enum": ["1h", "2h", "4h", "12h", "24h"],
+                    "enum": ["1h", "2h", "4h", "6h", "12h", "24h", "2d", "3d", "5d", "7d"],
                     "default": "4h",
                     "description": (
                         "With track=true: how often the lane re-reads the product (1h = 24 "
-                        "snapshots a day)."
+                        "snapshots a day, 6h = 4; 2d / 3d / 5d / 7d for long lists read every "
+                        "few days)."
                     ),
                 },
                 "read": {
                     "type": "string",
-                    "enum": ["offers", "product_page"],
+                    "enum": ["offers", "product_page", "web"],
                     "default": "offers",
                     "description": (
                         "With track=true (2026-10-29): offers (default) re-reads the "
                         "all-offers page; product_page re-reads the product page and its "
                         "offers page, so every reading's sales rank lands in bsr_points_hot. "
-                        "A product-page read draws 2 snapshots of the allowance."
+                        "A product-page read draws 2 snapshots of the allowance. web "
+                        "(2026-11-23, Amazon US, 24h or longer) also re-reads up to 5 shop "
+                        "pages its web_offers search confirmed (11 snapshots a read)."
                     ),
                 },
             },
@@ -351,7 +371,7 @@ TOOLS = [
         "name": "shopping",
         "description": (
             "Curated product discovery: a shopping keyword in, a ranked and grouped shortlist "
-            "out, in under ~100ms. USE WHEN the user asks 'best X', 'find me a Y under $Z', "
+            "out, in under 100 ms. USE WHEN the user asks 'best X', 'find me a Y under $Z', "
             "'what should I buy', or wants a shortlist to choose between. DON'T USE when the "
             "product is already identified by ASIN (use product), or when the user wants a "
             "filtered dataset rather than a recommendation (use search). RETURNS ranked "
@@ -370,10 +390,10 @@ TOOLS = [
             "with detail=true; user: 'analyse the price changes on the first one' -> product "
             "with that row's product_id, not a question back to the user. Ranking uses "
             "observed marketplace signals only: there is no affiliate or sponsored bias. A "
-            "bare ASIN in q returns exactly that product. Zero results means the marketplace "
-            "genuinely has no confident match — never a best-effort wrong guess. Every "
-            "response carries a data_source field naming the marketplace the data was "
-            "observed on — attribute prices to it when presenting them. This is "
+            "bare ASIN in q returns exactly that product. When no title matches the whole "
+            "query, the closest matches come back flagged match_quality none_exact and are "
+            "not billed. Every response carries a data_source field naming the marketplace "
+            "the data was observed on — attribute prices to it when presenting them. This is "
             "REVEALED-PREFERENCE data: ratings, review counts and each product's "
             "bought_past_month field (Amazon's own bought-in-past-month badge, present where "
             "Amazon exposes it) reflect what large numbers of buyers actually purchased and "
@@ -410,10 +430,32 @@ TOOLS = [
             "EVERY product everything the basic product call carries (2026-09-28): current "
             "sellers with fulfillment and delivery, 30-day price/stock events, stock history, "
             "brand_stats, dimensions, deal/badge/rating history, the star-rating breakdown "
-            "and its per-day history (rating_breakdown, rating_breakdown_history, from 2026-11-05), "
-            "variation coverage, page "
-            "content and up to 100 featured reviews, plus a response-wide seller_ratings "
-            "array; only bsr_history and offer_history stay product-only."
+            "and its per-day history (rating_breakdown, rating_breakdown_history, from "
+            "2026-11-05), variation coverage, page content and up to 100 featured reviews, "
+            "plus a response-wide seller_ratings array; only bsr_history and offer_history "
+            "stay product-only. OTHER MARKETPLACES (other_marketplaces=true, 2026-11-14, "
+            "keyed): every product also lists the same product on the other marketplaces we "
+            "hold - also_observed_on (Amazon: the same ASIN on the other Amazon marketplaces) "
+            "and matches (by barcode: Walmart items and other Amazon marketplaces' listings; "
+            "on Walmart results the Amazon listings) - each with price in that marketplace's "
+            "currency, price_observed_at and product_url; USE WHEN the user asks where else a "
+            "shortlisted product is sold or what it costs on other marketplaces; +0.5 credit "
+            "when at least one product lists another marketplace. MATCHING (match=true, "
+            "2026-11-12): find the SAME product - identical or another pack of it - on other "
+            "marketplaces, or the listing behind a supplier's line. Pass q (a description, an "
+            "ASIN, a Walmart item ID or a barcode) and any of upc, model, brand, size, price; "
+            "marketplaces = where to look (default all). mode=cache (default) answers from "
+            "stored data and earlier live matches; live runs one live search per listed "
+            "marketplace now; auto searches live only where stored data has no high or medium "
+            "match (live and auto need marketplaces and an API key). Each result carries "
+            "match {matched_by: same_asin | barcode | barcode_search | model | title, "
+            "confidence: high | medium | low, match_type: identical | different_pack | "
+            "different_size | unverified, pack_ratio, evidence}; relay low confidence as a "
+            "possible match, not a certain one. USE WHEN the user asks 'is this sold on "
+            "Amazon UK / Walmart', 'find this supplier item on Amazon', 'the same product "
+            "elsewhere'. COST 2 credits when a high or medium match comes back (low-only or "
+            "empty: not billed), plus for each marketplace searched live what serp charges "
+            "for it (Amazon 1, Walmart 2)."
         ),
         "inputSchema": {
             "type": "object",
@@ -547,6 +589,85 @@ TOOLS = [
                         "credits per query instead of 2."
                     ),
                 },
+                "other_marketplaces": {
+                    "type": "boolean",
+                    "default": False,
+                    "description": (
+                        "Every product also lists the same product on the other marketplaces "
+                        "we hold, each with its price, currency, observation date and "
+                        "product_url (also_observed_on + matches, as the product tool returns "
+                        "them). Keyed accounts only. +0.5 credit per query when at least one "
+                        "product lists another marketplace. Not with match=true."
+                    ),
+                },
+                "match": {
+                    "type": "boolean",
+                    "default": False,
+                    "description": (
+                        "Product matching instead of a shortlist: the same product on each "
+                        "marketplace in marketplaces, every result with match {matched_by, "
+                        "confidence, match_type, pack_ratio}. The shortlist knobs (group, "
+                        "sort, limit, price / stock filters, detail) do not apply."
+                    ),
+                },
+                "upc": {
+                    "type": "string",
+                    "description": "match=true: the product's barcode (UPC, EAN or GTIN).",
+                },
+                "model": {
+                    "type": "string",
+                    "description": "match=true: the maker's model or part number.",
+                },
+                "size": {
+                    "type": "string",
+                    "description": (
+                        "match=true: the input's pack and size, e.g. '28 oz', '12 x 28 oz', "
+                        "'6 pack'; results then carry pack_ratio (6.0 = a 6-pack of it)."
+                    ),
+                },
+                "price": {
+                    "type": "number",
+                    "minimum": 0,
+                    "description": (
+                        "match=true: the input's expected price, in the country's currency."
+                    ),
+                },
+                "marketplaces": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "us",
+                            "uk",
+                            "de",
+                            "ca",
+                            "au",
+                            "fr",
+                            "it",
+                            "es",
+                            "jp",
+                            "mx",
+                            "br",
+                            "walmart",
+                            "all",
+                        ],
+                    },
+                    "description": (
+                        "match=true: where to look. Default all with mode=cache; required "
+                        "with live / auto, where each one searched live adds its search cost."
+                    ),
+                },
+                "mode": {
+                    "type": "string",
+                    "enum": ["cache", "live", "auto"],
+                    "default": "cache",
+                    "description": (
+                        "match=true: cache = stored data and earlier live matches; live = one "
+                        "live search per listed marketplace now (Amazon 1 credit, Walmart 2 "
+                        "each); auto = live only where stored data has no high or medium "
+                        "match. live and auto need an API key."
+                    ),
+                },
             },
             "required": ["q"],
         },
@@ -555,13 +676,13 @@ TOOLS = [
             "readOnlyHint": True,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False,
+            "openWorldHint": True,
         },
     },
     {
         "name": "search",
         "description": (
-            "Filtered query over the tracked-product warehouse (24M+ Amazon and Walmart "
+            "Filtered query over the tracked-product warehouse (40M+ Amazon and Walmart "
             "products). USE WHEN the user wants a structured list matching explicit criteria: "
             "'well-rated dehumidifiers under $150 with 1000+ reviews', 'everything by brand X "
             "sorted by BSR', 'FBA products in this category'. DON'T USE for 'best X' buying "
@@ -940,10 +1061,10 @@ TOOLS = [
             "for a query — current ranking order, who is on page 1, sponsored/ad placements, "
             "related searches, refinement filters — or when the curated tools found nothing "
             "and the user wants Amazon itself checked. DON'T USE for ordinary product "
-            "discovery (shopping is <100ms and curated), for filtered datasets (search), or "
-            "for one known ASIN (product). RETURNS search_results (position, asin, title, "
-            "link, image, rating, ratings_total, price, list_price, unit_price (Amazon's "
-            "per-unit price, where the card prints one, never the price), recent_sales badge, "
+            "discovery (shopping is fast and curated), for filtered datasets (search), or for "
+            "one known ASIN (product). RETURNS search_results (position, asin, title, link, "
+            "image, rating, ratings_total, price, list_price, unit_price (Amazon's per-unit "
+            "price, where the card prints one, never the price), recent_sales badge, "
             "sponsored, is_prime), search_information (Amazon's OWN result-count estimate — "
             "'over 20,000' is an estimate, not a count), pagination, related_searches, "
             "refinements (round-trip: pass a refinements[*].value back in), ad_blocks / "
@@ -1288,6 +1409,321 @@ TOOLS = [
             "destructiveHint": False,
             "idempotentHint": True,
             "openWorldHint": True,
+        },
+    },
+    {
+        "name": "web_offers",
+        "description": (
+            "The same product on OTHER SHOPS' own pages (beyond Amazon and Walmart): a web "
+            "search (Google web + shopping results) and up to 8 shop product pages read now, "
+            "each offer confirmed as the same item by its barcode or by the page's name, "
+            "brand, model, size and pack. USE WHEN the user asks where else a product is sold "
+            "online, wants a price comparison with other shops (Target, Best Buy, eBay, brand "
+            "stores ...), a wholesale or retail-arbitrage check, or other web prices for an "
+            "Amazon ASIN, a Walmart item, a barcode or a brand + model. DON'T USE for "
+            "Amazon's own sellers (offers), Amazon or Walmart search results (serp), the same "
+            "product on other Amazon marketplaces or on Walmart (shopping with match=true), "
+            "or price history (product). RETURNS outcome (found | no_match), offers[] "
+            "(domain, url, title, brand, price, currency, availability, condition, match "
+            "confirmed | possible, confidence, matched_by gtin | model, pack_ratio, "
+            "in_market, observed_at), offer_count, confirmed_count, product (the identity "
+            "searched for), search (queries, pages opened / read), searched_at, "
+            "from_recent_search. HONESTY: 'possible' offers could not be confirmed from their "
+            "page; a shop that blocks readers is not listed; no_match means none of the shops "
+            "in the results was confirmed, not that nobody sells it. MARKET US shops in USD "
+            "(markets=any adds shops abroad). LATENCY 20-90 SECONDS; if the search is still "
+            "running the tool says so: call again with the same arguments. COST paid plans. "
+            "50 credits when at least one offer is confirmed with a price, 25 when the search "
+            "ran and no shop matched; a failed search is free. The same product asked again "
+            "within 24 hours is answered from that search at the same price."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "asin": {"type": "string", "description": "An Amazon US ASIN we hold."},
+                "item_id": {"type": "string", "description": "A Walmart item ID we hold."},
+                "gtin": {
+                    "type": "string",
+                    "description": "A barcode: UPC-12, EAN-13, GTIN-14 or ISBN-13.",
+                },
+                "brand": {
+                    "type": "string",
+                    "description": "The product's brand (with model or title).",
+                },
+                "model": {
+                    "type": "string",
+                    "description": "Model / part number (MPN), with brand.",
+                },
+                "title": {
+                    "type": "string",
+                    "description": "The product's name, when there is no identifier.",
+                },
+                "size": {
+                    "type": "string",
+                    "description": "Pack and size, e.g. '28 oz' or '6 pack'.",
+                },
+                "price": {
+                    "type": "number",
+                    "description": "The product's own price in USD (optional).",
+                },
+                "country": {
+                    "type": "string",
+                    "enum": ["us", "walmart"],
+                    "default": "us",
+                    "description": "Where asin / item_id lives: us (Amazon US) or walmart.",
+                },
+                "markets": {
+                    "type": "string",
+                    "enum": ["us", "any"],
+                    "default": "us",
+                    "description": (
+                        "us: US shops in USD. any: also shops abroad (in_market false)."
+                    ),
+                },
+                "max_age_hours": {
+                    "type": "number",
+                    "default": 24,
+                    "description": (
+                        "Answer from a search of the same product finished within this many "
+                        "hours (same price). 0 = a fresh search."
+                    ),
+                },
+            },
+        },
+        "annotations": {
+            "title": "Web Offers (other shops)",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+    },
+    {
+        "name": "web_identify",
+        "description": (
+            "WHICH PRODUCT a barcode (or a brand + model number, or a product name) is, read "
+            "from the web: Google web + shopping results (shops, barcode databases, makers) "
+            "read by a language model, a shop page's own barcode confirming it where one "
+            "does, then the same product on our Amazon and Walmart records. USE WHEN the user "
+            "has a UPC / EAN that product (gtin) does not resolve, a supplier line with a "
+            "barcode or model number, or asks what a barcode is. DON'T USE for a barcode our "
+            "records hold (product with gtin is cheaper), for an ASIN or a Walmart item "
+            "(already identified: product), or for where else it is sold (web_offers). "
+            "RETURNS outcome (identified | not_identified), identity (name, brand, model, "
+            "size, pack, category, confidence high | medium | low, confirmed_by "
+            "barcode_on_page | search_results | our_records, evidence[] with source, url, "
+            "title), listings[] (the same product per marketplace: marketplace, product_id, "
+            "title, brand, price, currency, product_url, match with matched_by and "
+            "confidence), search, searched_at. HONESTY: not_identified means the web results "
+            "name no one product with enough confidence, not that it does not exist; a "
+            "low-confidence guess is shown as such. LATENCY 10-40 SECONDS; if still running "
+            "the tool says so: call again with the same arguments. COST paid plans. 20 "
+            "credits identified, 10 when the search ran and the web names no one product; a "
+            "failed search is free. The same input asked again within 24 hours is answered "
+            "from that search at the same price."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "gtin": {
+                    "type": "string",
+                    "description": "A barcode: UPC-12, EAN-13, GTIN-14 or ISBN-13.",
+                },
+                "brand": {
+                    "type": "string",
+                    "description": "The product's brand (with model or title).",
+                },
+                "model": {
+                    "type": "string",
+                    "description": "Model / part number (MPN), with brand.",
+                },
+                "title": {
+                    "type": "string",
+                    "description": "The product's name, when there is no barcode.",
+                },
+                "marketplaces": {
+                    "type": "string",
+                    "default": "us,walmart",
+                    "description": (
+                        "Where to find its listings: Amazon marketplaces and walmart, "
+                        "comma-separated."
+                    ),
+                },
+                "max_age_hours": {
+                    "type": "number",
+                    "default": 24,
+                    "description": (
+                        "Answer from an identification of the same input finished within this "
+                        "many hours (same price). 0 = a fresh search."
+                    ),
+                },
+            },
+        },
+        "annotations": {
+            "title": "Web Identify (barcode to product)",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+    },
+    {
+        "name": "web_product",
+        "description": (
+            "The product ONE SHOP'S PAGE sells, read now from its URL: name, brand, model, "
+            "barcode, price, currency, stock, condition, size, color - from the page's own "
+            "product data when it carries it, else read by a language model. USE WHEN the "
+            "user gives a product URL on a shop's site (not Amazon / Walmart) and wants its "
+            "price or details, or wants it matched to Amazon / Walmart (match=true). DON'T "
+            "USE for Amazon or Walmart URLs (product), for finding other shops (web_offers) "
+            "or for a whole page's text (web_page). RETURNS outcome (product | no_product), "
+            "product, extraction (structured | model), tier (direct | residential), "
+            "final_url, read_at, listings[] with match=true. HONESTY: a page only a browser "
+            "reads is not read (nothing billed); search engines, social networks and "
+            "non-public addresses are never read. LATENCY 1-60 SECONDS. COST paid plans: the "
+            "page (1 plain request, 4 residential proxy) + 1 when the page carries its own "
+            "product data or + 5 when the model reads it; + 10 for a matched listing; a page "
+            "not read is free."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "url": {
+                    "type": "string",
+                    "description": "The shop's product page URL (http or https).",
+                },
+                "match": {
+                    "type": "boolean",
+                    "default": False,
+                    "description": "Also find the same product on our Amazon / Walmart records.",
+                },
+                "marketplaces": {
+                    "type": "string",
+                    "default": "us,walmart",
+                    "description": (
+                        "match=true: Amazon marketplaces and walmart, comma-separated."
+                    ),
+                },
+                "max_age_hours": {
+                    "type": "number",
+                    "default": 0,
+                    "description": (
+                        "Answer from a read of the same URL within this many hours (same "
+                        "price). 0 = a fresh read."
+                    ),
+                },
+            },
+            "required": ["url"],
+        },
+        "annotations": {
+            "title": "Web Product (a shop's product page)",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+    },
+    {
+        "name": "web_page",
+        "description": (
+            "ONE WEB PAGE read now from its URL by our web workers (a plain request, else a "
+            "residential proxy): its visible text (format=text, the default here) or its HTML "
+            "(format=html). USE WHEN the user asks what a page says or wants its contents, "
+            "e.g. a shop's policy, a spec sheet, a press page. DON'T USE for Amazon or "
+            "Walmart (product, serp), for a shop's product data (web_product) or for "
+            "searching the web (web_offers). RETURNS text or html, title, final_url, "
+            "http_status, content_type, tier, bytes, truncated (over 5 MB), read_at. HONESTY: "
+            "text types only (HTML, XML, JSON, plain text); search engines, social networks "
+            "and non-public addresses are never read; a page only a browser reads is not read "
+            "(nothing billed). LATENCY 1-60 SECONDS. COST paid plans: 1 credit (plain "
+            "request) or 4 (residential proxy) per page delivered; a page not read is free."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "url": {"type": "string", "description": "The page URL (http or https)."},
+                "format": {
+                    "type": "string",
+                    "enum": ["text", "html"],
+                    "default": "text",
+                    "description": "text: the page's visible text; html: the page as served.",
+                },
+                "max_age_hours": {
+                    "type": "number",
+                    "default": 0,
+                    "description": (
+                        "Answer from a read of the same URL within this many hours (0-24, "
+                        "same price). 0 = a fresh read."
+                    ),
+                },
+            },
+            "required": ["url"],
+        },
+        "annotations": {
+            "title": "Web Page (one URL)",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+    },
+    {
+        "name": "web_history",
+        "description": (
+            "A product's PRICES ON OTHER SHOPS OVER TIME: one series per shop, one point per "
+            "day, from Logimu's web offers searches and our weekly re-reads of the confirmed "
+            "shop pages. USE WHEN the user asks how a product's price moved at other shops "
+            "(Target, Best Buy, eBay ...), or wants a shop's price trend beside Amazon's. "
+            "DON'T USE for Amazon's own price history (product), for where it is sold right "
+            "now (web_offers). RETURNS shops[] (domain, url, confidence, matched_by, "
+            "first_day, last_day, points[] with day, price, currency, availability, source "
+            "search | refresh), shop_count, point_count. HONESTY: only shops a web offers "
+            "search confirmed; give the product the way it was searched (the history is kept "
+            "per search). COST paid plans: 2 credits when any point comes back; free when we "
+            "hold none."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "asin": {"type": "string", "description": "An Amazon US ASIN we hold."},
+                "item_id": {"type": "string", "description": "A Walmart item ID we hold."},
+                "gtin": {
+                    "type": "string",
+                    "description": "A barcode: UPC-12, EAN-13, GTIN-14 or ISBN-13.",
+                },
+                "brand": {
+                    "type": "string",
+                    "description": "The product's brand (with model or title).",
+                },
+                "model": {
+                    "type": "string",
+                    "description": "Model / part number (MPN), with brand.",
+                },
+                "title": {
+                    "type": "string",
+                    "description": "The product's name, when there is no identifier.",
+                },
+                "country": {
+                    "type": "string",
+                    "enum": ["us", "walmart"],
+                    "default": "us",
+                    "description": "Where asin / item_id lives.",
+                },
+                "days": {
+                    "type": "integer",
+                    "default": 180,
+                    "minimum": 1,
+                    "maximum": 730,
+                    "description": "How far back.",
+                },
+            },
+        },
+        "annotations": {
+            "title": "Web Price History (other shops)",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False,
         },
     },
     {
@@ -1786,12 +2222,12 @@ TOOLS = [
     {
         "name": "keyword_rankings",
         "description": (
-            "Page 1 of Amazon search for a keyword, as Logimu last OBSERVED it (head "
-            "search terms taken from Amazon's own autocomplete, each observed about once a "
-            "week, all departments; amazon.com from one US delivery ZIP): the organic order with product "
-            "facts (title, brand, price, rating) and each product's latest observed buy box "
-            "(seller, AMZ / FBA / FBM, other sellers), the sponsored units present in the "
-            "page HTML (Sponsored Brands banners and videos, server-rendered Sponsored "
+            "Page 1 of Amazon search for a keyword, as Logimu last OBSERVED it (head search "
+            "terms taken from Amazon's own autocomplete, each observed about once a week, all "
+            "departments; amazon.com from one US delivery ZIP): the organic order with "
+            "product facts (title, brand, price, rating) and each product's latest observed "
+            "buy box (seller, AMZ / FBA / FBM, other sellers), the sponsored units present in "
+            "the page HTML (Sponsored Brands banners and videos, server-rendered Sponsored "
             "Products; ones Amazon loads later by JavaScript are counted as slots only), the "
             "Overall Pick (Amazon's Choice) holder, Amazon's result count, page_summary "
             "(organic slots by brand and by buy-box seller, Amazon's own buy boxes, FBA / "
@@ -1799,15 +2235,15 @@ TOOLS = [
             "1 since the previous observation, all dated. history=true adds every weekly "
             "observation and the rank series of the page's products. USE WHEN the user asks "
             "which products, brands or sellers hold page 1 for a search term, who advertises "
-            "on it, or how the page changed. All 11 Amazon marketplaces (country). NOT volume figures (Amazon "
-            "publishes none for search terms and none is implied) and NOT live: a dated "
-            "weekly sample, and the same search minutes apart differs by a few products - for "
-            "a live page use the serp tool, for what Amazon suggests for a seed the keywords "
-            "tool, for the keywords a product shows up for product_keywords. A keyword "
-            "outside the observed set is free (keyword_not_found). COST: paid plan required "
-            "(listed only for keys on a paid plan); 1 credit (+0.5 with history when more "
-            "than one observation exists). Counts against the derived daily cap (default "
-            "2,000 calls per account)."
+            "on it, or how the page changed. All 11 Amazon marketplaces (country). NOT volume "
+            "figures (Amazon publishes none for search terms and none is implied) and NOT "
+            "live: a dated weekly sample, and the same search minutes apart differs by a few "
+            "products - for a live page use the serp tool, for what Amazon suggests for a "
+            "seed the keywords tool, for the keywords a product shows up for "
+            "product_keywords. A keyword outside the observed set is free "
+            "(keyword_not_found). COST: paid plan required (listed only for keys on a paid "
+            "plan); 1 credit (+0.5 with history when more than one observation exists). "
+            "Counts against the derived daily cap (default 2,000 calls per account)."
         ),
         "inputSchema": {
             "type": "object",
@@ -1824,10 +2260,10 @@ TOOLS = [
                     "enum": ["us", "uk", "de", "ca", "au", "fr", "it", "es", "jp", "mx", "br"],
                     "default": "us",
                     "description": (
-                        "Amazon marketplace: us (amazon.com, default), uk, de, ca, au, fr, it, "
-                        "es, jp, mx or br, each searched in its own language. us and uk are read "
-                        "in full about weekly; the other nine started 2026-10-29 / 10-30 and fill "
-                        "in week by week (coverage says how far)."
+                        "Amazon marketplace: us (amazon.com, default), uk, de, ca, au, fr, "
+                        "it, es, jp, mx or br, each searched in its own language. us and uk "
+                        "are read in full about weekly; the other nine started 2026-10-29 / "
+                        "10-30 and fill in week by week (coverage says how far)."
                     ),
                 },
                 "history": {
@@ -1852,25 +2288,25 @@ TOOLS = [
     {
         "name": "product_keywords",
         "description": (
-            "REVERSE ASIN on Amazon (11 marketplaces, country): every observed keyword (head search terms "
-            "taken from Amazon's own autocomplete, page 1 observed about once a week) whose "
-            "latest page 1 shows the product, organically with its rank or in a sponsored "
-            "unit present in the page HTML, with the keyword's result count, the Overall Pick "
-            "badge and the date; organic first, best rank first, with totals (keywords, "
-            "organic, top 10, sponsored, Overall Pick). Pass asins (up to 10, the product "
-            "first) to COMPARE it with competitors: each keyword row adds every competitor's "
-            "organic rank, asins_on_page and gap (a competitor on page 1 organically, the "
-            "product not); gaps=true keeps only those. history=true adds the first product's "
-            "rank on each keyword over time. USE WHEN the user asks which keywords a product "
-            "(theirs or a competitor's) shows up for, where competitors are visible and they "
-            "are not, or how a product's position on a term moved. Coverage is head search "
-            "terms and page 1 only, so a product shows "
-            "fewer keywords than a full search index would. NOT volume figures and NOT live: "
-            "dated weekly samples. A product not seen on any observed page is free "
-            "(asin_not_found). COST: paid plan required (listed only for keys on a paid "
-            "plan); 1 credit per 25 keywords returned per ASIN compared (+0.5 with history "
-            "when a keyword has more than one observation). Counts against the derived daily "
-            "cap (default 2,000 calls per account)."
+            "REVERSE ASIN on Amazon (11 marketplaces, country): every observed keyword (head "
+            "search terms taken from Amazon's own autocomplete, page 1 observed about once a "
+            "week) whose latest page 1 shows the product, organically with its rank or in a "
+            "sponsored unit present in the page HTML, with the keyword's result count, the "
+            "Overall Pick badge and the date; organic first, best rank first, with totals "
+            "(keywords, organic, top 10, sponsored, Overall Pick). Pass asins (up to 10, the "
+            "product first) to COMPARE it with competitors: each keyword row adds every "
+            "competitor's organic rank, asins_on_page and gap (a competitor on page 1 "
+            "organically, the product not); gaps=true keeps only those. history=true adds the "
+            "first product's rank on each keyword over time. USE WHEN the user asks which "
+            "keywords a product (theirs or a competitor's) shows up for, where competitors "
+            "are visible and they are not, or how a product's position on a term moved. "
+            "Coverage is head search terms and page 1 only, so a product shows fewer keywords "
+            "than a full search index would. NOT volume figures and NOT live: dated weekly "
+            "samples. A product not seen on any observed page is free (asin_not_found). COST: "
+            "paid plan required (listed only for keys on a paid plan); 1 credit per 25 "
+            "keywords returned per ASIN compared (+0.5 with history when a keyword has more "
+            "than one observation). Counts against the derived daily cap (default 2,000 calls "
+            "per account)."
         ),
         "inputSchema": {
             "type": "object",
@@ -1896,10 +2332,10 @@ TOOLS = [
                     "enum": ["us", "uk", "de", "ca", "au", "fr", "it", "es", "jp", "mx", "br"],
                     "default": "us",
                     "description": (
-                        "Amazon marketplace: us (amazon.com, default), uk, de, ca, au, fr, it, "
-                        "es, jp, mx or br, each searched in its own language. us and uk are read "
-                        "in full about weekly; the other nine started 2026-10-29 / 10-30 and fill "
-                        "in week by week (coverage says how far)."
+                        "Amazon marketplace: us (amazon.com, default), uk, de, ca, au, fr, "
+                        "it, es, jp, mx or br, each searched in its own language. us and uk "
+                        "are read in full about weekly; the other nine started 2026-10-29 / "
+                        "10-30 and fill in week by week (coverage says how far)."
                     ),
                 },
                 "placement": {
@@ -1953,24 +2389,25 @@ TOOLS = [
         "name": "track_product",
         "description": (
             "TRACK a product: pin an Amazon ASIN into our hot lane so its all-offers page is "
-            "re-read every hour or every 2, 4, 12 or 24 hours, for as long as the plan is "
-            "active (or a ttl_days you set), with e-mail and webhook alerts on the thresholds "
-            "you give; every read lands in the product's history as a sub-daily buy-box point "
-            "(price, buy-box seller, fulfillment, offer count - buybox_price_points_hot on "
-            "the product tool). read=product_page (2026-10-29) reads the product page and its "
-            "offers page instead, so the SALES RANK is read too: every reading lands in "
-            "bsr_points_hot (and its offers page in buybox_price_points_hot); such a read "
-            "draws 2 snapshots of the allowance. USE WHEN the user wants to watch a product's "
-            "price, buy box, seller count or sales rank more often than our normal cadence: "
-            "repricing, MAP and buy-box monitoring, a competitor's listing, a launch, a deal, "
-            "a book's rank. Posting the same ASIN again renews it and changes its interval. "
-            "DON'T USE to read data (product, offers): tracking only schedules the reads. "
-            "COST 0 credits: what a plan sells is a daily allowance of tracked snapshots "
-            "(Solo 2,500 a day = 416 products every 4 hours, Starter 6,000, Growth 18,000, "
-            "Standard 40,000, Scale 170,000, Volume 710,000); when the allowance is spent the "
-            "answer says so with the upgrade link, and when only a longer interval fits it is "
-            "granted (granted_interval). RETURNS id, asin, country, status (active / paused / "
-            "expired / stopped), interval, read, granted_interval, requested_interval, "
+            "re-read every hour, every 2, 4, 6, 12 or 24 hours, or every 2, 3, 5 or 7 days (6 "
+            "hours since 2026-11-23), for as long as the plan is active (or a ttl_days you "
+            "set), with e-mail and webhook alerts on the thresholds you give; every read "
+            "lands in the product's history as a sub-daily buy-box point (price, buy-box "
+            "seller, fulfillment, offer count - buybox_price_points_hot on the product tool). "
+            "read=product_page (2026-10-29) reads the product page and its offers page "
+            "instead, so the SALES RANK is read too: every reading lands in bsr_points_hot "
+            "(and its offers page in buybox_price_points_hot); such a read draws 2 snapshots "
+            "of the allowance. USE WHEN the user wants to watch a product's price, buy box, "
+            "seller count or sales rank more often than our normal cadence: repricing, MAP "
+            "and buy-box monitoring, a competitor's listing, a launch, a deal, a book's rank. "
+            "Posting the same ASIN again renews it and changes its interval. DON'T USE to "
+            "read data (product, offers): tracking only schedules the reads. COST 0 credits: "
+            "what a plan sells is a daily allowance of tracked snapshots (Solo 2,500 a day = "
+            "416 products every 4 hours, Starter 6,000, Growth 18,000, Standard 40,000, Scale "
+            "170,000, Volume 710,000); when the allowance is spent the answer says so with "
+            "the upgrade link, and when only a longer interval fits it is granted "
+            "(granted_interval). RETURNS id, asin, country, status (active / paused / expired "
+            "/ stopped), interval, read, granted_interval, requested_interval, "
             "snapshots_per_day (reads_per_day too for product_page), expires_at, in_lane, "
             "last_snapshot_at, next_due_at, pending (true until the lane picks it up, within "
             "~10 minutes), allowance (plan, snapshots_per_day, used, remaining). action=stop "
@@ -2023,12 +2460,12 @@ TOOLS = [
                     "type": "array",
                     "items": {"type": "string"},
                     "description": (
-                        "Bulk (2026-10-14): up to 10,000 ASINs in one call - with action=track "
-                        "all get the same interval / ttl_days / alerts (results[] in input "
-                        "order: created / renewed / refused / invalid, the allowance consumed "
-                        "in input order, never all-or-nothing); with action=stop they are "
-                        "stopped; with action=sync they are the full list the active set "
-                        "becomes."
+                        "Bulk (2026-10-14): up to 10,000 ASINs in one call - with "
+                        "action=track all get the same interval / ttl_days / alerts "
+                        "(results[] in input order: created / renewed / refused / invalid, "
+                        "the allowance consumed in input order, never all-or-nothing); with "
+                        "action=stop they are stopped; with action=sync they are the full "
+                        "list the active set becomes."
                     ),
                 },
                 "dry_run": {
@@ -2047,28 +2484,34 @@ TOOLS = [
                 },
                 "interval": {
                     "type": "string",
-                    "enum": ["1h", "2h", "4h", "12h", "24h"],
+                    "enum": ["1h", "2h", "4h", "6h", "12h", "24h", "2d", "3d", "5d", "7d"],
                     "default": "4h",
                     "description": (
                         "How often the lane re-reads the product (see read). A shorter "
                         "interval costs more of the daily allowance (1h = 24 snapshots a day, "
-                        "2h = 12, 4h = 6, 12h = 2, 24h = 1; twice that with "
-                        "read=product_page)."
+                        "2h = 12, 4h = 6, 6h = 4, 12h = 2, 24h = 1, 2d = 0.5, 3d = 0.33, 5d = "
+                        "0.2, 7d = 0.14; twice that with read=product_page). A request of 24h "
+                        "or less is never granted more than 24h; a multi-day one can be "
+                        "granted up to 7d when its own interval does not fit."
                     ),
                 },
                 "read": {
                     "type": "string",
-                    "enum": ["offers", "product_page"],
+                    "enum": ["offers", "product_page", "web"],
                     "default": "offers",
                     "description": (
                         "Which page each read fetches (2026-10-29): offers (default) = the "
-                        "all-offers page (buy box, price, every offer, stock); product_page = "
-                        "the product page and its offers page, so the sales rank is read too: "
-                        "every reading lands in the product tool's bsr_points_hot, and its "
-                        "offers page in buybox_price_points_hot as with offers. A "
-                        "product-page read draws 2 snapshots of the allowance (12h = 4 a "
-                        "day). Like interval, every call sets it: tracking the same ASIN "
-                        "again without read switches it back to offers."
+                        "all-offers page (buy box, price, every offer, stock); web "
+                        "(2026-11-23, Amazon US, daily or less often, default 24h) = the "
+                        "offers page plus up to 5 shop pages that the product's web_offers "
+                        "search confirmed, 11 snapshots a read (their prices: web_history; "
+                        "search it with web_offers first); product_page = the product page "
+                        "and its offers page, so the sales rank is read too: every reading "
+                        "lands in the product tool's bsr_points_hot, and its offers page in "
+                        "buybox_price_points_hot as with offers. A product-page read draws 2 "
+                        "snapshots of the allowance (12h = 4 a day). Like interval, every "
+                        "call sets it: tracking the same ASIN again without read switches it "
+                        "back to offers."
                     ),
                 },
                 "ttl_days": {
@@ -2111,8 +2554,12 @@ TOOLS = [
                         "no_buybox = offers exist but Amazon shows no featured offer, "
                         "out_of_stock = no offers at all, confirmed by a second read; the "
                         "event carries both codes), out_of_stock (true: shorthand for a "
-                        "change to out_of_stock), back_in_stock (true: a change to in_stock). "
-                        "{} attaches the webhook and fires on nothing."
+                        "change to out_of_stock), back_in_stock (true: a change to in_stock), "
+                        "any_price_change (true: the buy-box price, Amazon's own new offer, "
+                        "the cheapest new offer from another seller or the cheapest used "
+                        "offer changed since the previous read; the event carries the four "
+                        "prices, the previous ones and the read's full offer list). {} "
+                        "attaches the webhook and fires on nothing."
                     ),
                     "properties": {
                         "price_below": {"type": "number"},
@@ -2124,6 +2571,7 @@ TOOLS = [
                         "availability_change": {"type": "boolean"},
                         "out_of_stock": {"type": "boolean"},
                         "back_in_stock": {"type": "boolean"},
+                        "any_price_change": {"type": "boolean"},
                     },
                 },
             },
@@ -2227,22 +2675,23 @@ TOOLS = [
             "run_id, one run's progress (rows done, credits so far, queue position); "
             "action=results returns completed result rows of a run, mid-run too (limit / "
             "offset to page; jsonl_url and csv_url give the full download); action=list lists "
-            "the account's batches; action=schedule repeats a batch every 12 hours / daily / "
-            "weekly / monthly (credit_ceiling, webhook_url, email); action=delete removes a batch. "
-            "USE WHEN the user has more than a handful of ASINs, barcodes, search terms, "
-            "seller ids, brands or seeds to run, wants a daily/weekly refresh, or wants a "
-            "CSV. Kinds: product (asins or gtins - or source=tracked for the ASINs this "
-            "account tracks, typically with include [history_only] at 0.05 a row), search "
-            "(terms, live SERP), seller / brand / category / keywords (paid plans), and every "
-            "other endpoint as its own kind (shopping, warehouse_search, bestsellers, offers, "
-            "deals, seller_products, seller_brands, seller_network, brand_sellers, "
-            "brand_network, keywords_compare, categories, category_search, brands_top, "
-            "brands_movers, sellers_top, sellers_movers, categories_top) with the endpoint's "
-            "query parameters in params. Each row bills what the endpoint bills; failed, "
-            "not-found and duplicate rows are never billed; runs are serialized per "
-            "marketplace. COST estimate / status / results / list are free; create + run "
-            "queue billable rows (the estimate is the ceiling). API key required (keyed "
-            "lanes)."
+            "the account's batches; action=schedule repeats a batch every 6 or 12 hours / "
+            "daily / weekly / monthly (credit_ceiling, webhook_url, email); action=delete "
+            "removes a batch. USE WHEN the user has more than a handful of ASINs, barcodes, "
+            "search terms, seller ids, brands or seeds to run, wants a daily/weekly refresh, "
+            "or wants a CSV. Kinds: product (asins or gtins - or source=tracked for the ASINs "
+            "this account tracks, typically with include [history_only] at 0.05 a row), "
+            "search (terms, live SERP), seller / brand / category / keywords (paid plans), "
+            "and every other endpoint as its own kind (shopping, warehouse_search, "
+            "bestsellers, offers, deals, seller_products, seller_brands, seller_network, "
+            "brand_sellers, brand_network, keywords_compare, categories, category_search, "
+            "brands_top, brands_movers, sellers_top, sellers_movers, categories_top, "
+            "web_offers - paid plans: the same product on other shops for each line of terms, "
+            "us or walmart) with the endpoint's query parameters in params. Each row bills "
+            "what the endpoint bills; failed, not-found and duplicate rows are never billed; "
+            "runs are serialized per marketplace. COST estimate / status / results / list are "
+            "free; create + run queue billable rows (the estimate is the ceiling). API key "
+            "required (keyed lanes)."
         ),
         "inputSchema": {
             "type": "object",
@@ -2322,7 +2771,8 @@ TOOLS = [
                     "items": {"type": "string"},
                     "description": (
                         "search / shopping / warehouse_search / category_search batches: the "
-                        "queries."
+                        "queries. web_offers batches: one product a line (an ASIN, a barcode "
+                        "or a description on us; a Walmart item ID on walmart)."
                     ),
                 },
                 "seller_ids": {
@@ -2399,12 +2849,13 @@ TOOLS = [
                 },
                 "schedule": {
                     "type": "string",
-                    "enum": ["none", "12h", "daily", "weekly", "monthly"],
+                    "enum": ["none", "6h", "12h", "daily", "weekly", "monthly"],
                     "description": (
-                        "schedule: how often the batch re-runs (none stops the schedule). 12h "
-                        "fires twice a day, at at_hour_utc and 12 hours later; daily once a "
-                        "day at at_hour_utc (default midnight UTC); weekly on Monday and "
-                        "monthly on the 1st, 00:00 UTC."
+                        "schedule: how often the batch re-runs (none stops the schedule). 6h "
+                        "fires four times a day, at at_hour_utc and every 6 hours after it; "
+                        "12h twice a day, at at_hour_utc and 12 hours later; daily once a day "
+                        "at at_hour_utc (default midnight UTC); weekly on Monday and monthly "
+                        "on the 1st, 00:00 UTC."
                     ),
                 },
                 "at_hour_utc": {
@@ -2412,9 +2863,10 @@ TOOLS = [
                     "minimum": 0,
                     "maximum": 23,
                     "description": (
-                        "schedule, 12h and daily only: the UTC hour it fires at (12h: this "
-                        "hour and 12 hours later). Default: 12h = the current UTC hour, daily "
-                        "= 0. Kept when the same cadence is saved again without it."
+                        "schedule, 6h / 12h / daily only: the UTC hour it fires at (12h: this "
+                        "hour and 12 hours later; 6h: this hour and every 6 hours after it). "
+                        "Default: 6h and 12h = the current UTC hour, daily = 0. Kept when the "
+                        "same cadence is saved again without it."
                     ),
                 },
                 "schedule_enabled": {
@@ -2439,9 +2891,10 @@ TOOLS = [
                 "email": {
                     "type": "boolean",
                     "description": (
-                        "create / schedule: e-mail the account when a run completes or pauses and "
-                        "when a scheduled firing is refused. Default false for batches created here "
-                        "or through the REST API; results are always available programmatically."
+                        "create / schedule: e-mail the account when a run completes or pauses "
+                        "and when a scheduled firing is refused. Default false for batches "
+                        "created here or through the REST API; results are always available "
+                        "programmatically."
                     ),
                 },
                 "limit": {

@@ -1,2 +1,6 @@
 # MCP registry signing key (com.logimu namespace) — local only, never commit
 *.pem
+
+# build output: pip regenerates these; a tracked copy can be packaged instead of the current stub
+build/
+*.egg-info/

@@ -1,2 +1,0 @@
-[console_scripts]
-logimu-mcp-stub = logimu_mcp.stub:main
