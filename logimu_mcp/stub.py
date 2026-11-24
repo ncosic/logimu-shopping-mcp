@@ -1537,13 +1537,13 @@ TOOLS = [
             "price or details, or wants it matched to Amazon / Walmart (match=true). DON'T "
             "USE for Amazon or Walmart URLs (product), for finding other shops (web_offers) "
             "or for a whole page's text (web_page). RETURNS outcome (product | no_product), "
-            "product, extraction (structured | model), tier (direct | residential), "
-            "final_url, read_at, listings[] with match=true. HONESTY: a page only a browser "
-            "reads is not read (nothing billed); search engines, social networks and "
-            "non-public addresses are never read. LATENCY 1-60 SECONDS. COST paid plans: the "
-            "page (1 plain request, 4 residential proxy) + 1 when the page carries its own "
-            "product data or + 5 when the model reads it; + 10 for a matched listing; a page "
-            "not read is free."
+            "product, extraction (structured | model), tier (direct | residential | browser), "
+            "final_url, read_at, listings[] with match=true. HONESTY: a page that none of the "
+            "three routes delivers is not read (nothing billed); search engines, social "
+            "networks and non-public addresses are never read. LATENCY 1-90 SECONDS. COST "
+            "paid plans: the page (1 plain request, 4 residential proxy, 10 read in a "
+            "browser) + 1 when the page carries its own product data or + 5 when the model "
+            "reads it; + 10 for a matched listing; a page not read is free."
         ),
         "inputSchema": {
             "type": "object",
@@ -1587,16 +1587,17 @@ TOOLS = [
         "name": "web_page",
         "description": (
             "ONE WEB PAGE read now from its URL by our web workers (a plain request, else a "
-            "residential proxy): its visible text (format=text, the default here) or its HTML "
-            "(format=html). USE WHEN the user asks what a page says or wants its contents, "
-            "e.g. a shop's policy, a spec sheet, a press page. DON'T USE for Amazon or "
-            "Walmart (product, serp), for a shop's product data (web_product) or for "
-            "searching the web (web_offers). RETURNS text or html, title, final_url, "
+            "residential proxy, else a browser): its visible text (format=text, the default "
+            "here) or its HTML (format=html). USE WHEN the user asks what a page says or "
+            "wants its contents, e.g. a shop's policy, a spec sheet, a press page. DON'T USE "
+            "for Amazon or Walmart (product, serp), for a shop's product data (web_product) "
+            "or for searching the web (web_offers). RETURNS text or html, title, final_url, "
             "http_status, content_type, tier, bytes, truncated (over 5 MB), read_at. HONESTY: "
             "text types only (HTML, XML, JSON, plain text); search engines, social networks "
-            "and non-public addresses are never read; a page only a browser reads is not read "
-            "(nothing billed). LATENCY 1-60 SECONDS. COST paid plans: 1 credit (plain "
-            "request) or 4 (residential proxy) per page delivered; a page not read is free."
+            "and non-public addresses are never read; a page that none of the three routes "
+            "delivers is not read (nothing billed). LATENCY 1-90 SECONDS. COST paid plans: 1 "
+            "credit (plain request), 4 (residential proxy) or 10 (read in a browser) per page "
+            "delivered; a page not read is free."
         ),
         "inputSchema": {
             "type": "object",
