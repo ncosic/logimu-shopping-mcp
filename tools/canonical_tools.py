@@ -1581,7 +1581,7 @@ TOOLS = [
             "final_url, read_at, listings[] with match=true. HONESTY: a page that none of the "
             "three routes delivers is not read (nothing billed); search engines, social "
             "networks and non-public addresses are never read. LATENCY 1-90 SECONDS. COST paid "
-            "plans: the page (1 plain request, 4 residential proxy, 10 read in a browser) + 1 "
+            "plans: the page (1 plain request, 4 residential route, 10 read in a browser) + 1 "
             "when the page carries its own product data or + 5 when the model reads it; + 10 "
             "for a matched listing; a page not read is free."
         ),
@@ -1627,7 +1627,7 @@ TOOLS = [
         "name": "web_page",
         "description": (
             "ONE WEB PAGE read now from its URL by our web workers (a plain request, else a "
-            "residential proxy, else a browser): its visible text (format=text, the default "
+            "residential route, else a browser): its visible text (format=text, the default "
             "here) or its HTML "
             "(format=html). USE WHEN the user asks what a page says or wants its contents, "
             "e.g. a shop's policy, a spec sheet, a press page. DON'T USE for Amazon or "
@@ -1637,7 +1637,7 @@ TOOLS = [
             "text types only (HTML, XML, JSON, plain text); search engines, social networks "
             "and non-public addresses are never read; a page that none of the three routes "
             "delivers is not read (nothing billed). LATENCY 1-90 SECONDS. COST paid plans: 1 "
-            "credit (plain request), 4 (residential proxy) or 10 (read in a browser) per page "
+            "credit (plain request), 4 (residential route) or 10 (read in a browser) per page "
             "delivered; a page not read is free."
         ),
         "inputSchema": {
