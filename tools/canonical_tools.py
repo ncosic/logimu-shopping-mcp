@@ -1433,7 +1433,7 @@ TOOLS = [
             "in the results was confirmed, not that nobody sells it. MARKET US shops in USD "
             "(markets=any adds shops abroad). LATENCY 20-90 SECONDS; if the search is still "
             "running the tool says so: call again with the same arguments. COST paid plans. "
-            "50 credits when at least one offer is confirmed with a price, 25 when the search "
+            "70 credits when at least one offer is confirmed with a price, 50 when the search "
             "ran and no shop matched; a failed search is free. The same product asked again "
             "within 24 hours is answered from that search at the same price."
         ),
@@ -1517,8 +1517,8 @@ TOOLS = [
             "confidence), search, searched_at. HONESTY: not_identified means the web results "
             "name no one product with enough confidence, not that it does not exist; a "
             "low-confidence guess is shown as such. LATENCY 10-40 SECONDS; if still running "
-            "the tool says so: call again with the same arguments. COST paid plans. 20 "
-            "credits identified, 10 when the search ran and the web names no one product; a "
+            "the tool says so: call again with the same arguments. COST paid plans. 40 "
+            "credits identified, 25 when the search ran and the web names no one product; a "
             "failed search is free. The same input asked again within 24 hours is answered "
             "from that search at the same price."
         ),
@@ -1581,7 +1581,7 @@ TOOLS = [
             "final_url, read_at, listings[] with match=true. HONESTY: a page that none of the "
             "three routes delivers is not read (nothing billed); search engines, social "
             "networks and non-public addresses are never read. LATENCY 1-90 SECONDS. COST paid "
-            "plans: the page (1 plain request, 4 residential route, 10 read in a browser) + 1 "
+            "plans: the page (1 plain request, 4 residential route, 15 read in a browser) + 1 "
             "when the page carries its own product data or + 5 when the model reads it; + 10 "
             "for a matched listing; a page not read is free."
         ),
@@ -1637,7 +1637,7 @@ TOOLS = [
             "text types only (HTML, XML, JSON, plain text); search engines, social networks "
             "and non-public addresses are never read; a page that none of the three routes "
             "delivers is not read (nothing billed). LATENCY 1-90 SECONDS. COST paid plans: 1 "
-            "credit (plain request), 4 (residential route) or 10 (read in a browser) per page "
+            "credit (plain request), 4 (residential route) or 15 (read in a browser) per page "
             "delivered; a page not read is free."
         ),
         "inputSchema": {
