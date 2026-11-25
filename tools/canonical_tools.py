@@ -2560,8 +2560,12 @@ TOOLS = [
                         "any_price_change (true: the buy-box price, Amazon's own new offer, "
                         "the cheapest new offer from another seller or the cheapest used "
                         "offer changed since the previous read; the event carries the four "
-                        "prices, the previous ones and the read's full offer list). {} "
-                        "attaches the webhook and fires on nothing."
+                        "prices, the previous ones and the read's full offer list), new_only "
+                        "(true: price_below / price_above / price_change_pct and "
+                        "buybox_seller_change skip a read whose buy box is a used offer and "
+                        "compare with the last new buy-box price and holder; every event "
+                        "carries buybox_condition new / used / null). {} attaches the "
+                        "webhook and fires on nothing."
                     ),
                     "properties": {
                         "price_below": {"type": "number"},
@@ -2574,6 +2578,7 @@ TOOLS = [
                         "out_of_stock": {"type": "boolean"},
                         "back_in_stock": {"type": "boolean"},
                         "any_price_change": {"type": "boolean"},
+                        "new_only": {"type": "boolean"},
                     },
                 },
             },
