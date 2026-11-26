@@ -1417,9 +1417,11 @@ TOOLS = [
             "in the results was confirmed, not that nobody sells it. MARKET US shops in USD "
             "(markets=any adds shops abroad). LATENCY 20-90 SECONDS; if the search is still "
             "running the tool says so: call again with the same arguments. COST paid plans. "
-            "70 credits when at least one offer is confirmed with a price, 50 when the search "
+            "70 credits when at least one offer is confirmed with a price, 62 when the search "
             "ran and no shop matched; a failed search is free. The same product asked again "
-            "within 24 hours is answered from that search at the same price."
+            "within 24 hours is answered from that search at the same price. A call that uses "
+            "more than its listed price covers (several browser tries, a very large page, a "
+            "long model read) is billed by what it used (credits_detail)."
         ),
         "inputSchema": {
             "type": "object",
@@ -1502,9 +1504,11 @@ TOOLS = [
             "name no one product with enough confidence, not that it does not exist; a "
             "low-confidence guess is shown as such. LATENCY 10-40 SECONDS; if still running "
             "the tool says so: call again with the same arguments. COST paid plans. 40 "
-            "credits identified, 25 when the search ran and the web names no one product; a "
+            "credits identified, 32 when the search ran and the web names no one product; a "
             "failed search is free. The same input asked again within 24 hours is answered "
-            "from that search at the same price."
+            "from that search at the same price. A call that uses more than its listed price "
+            "covers (several browser tries, a very large page, a long model read) is billed "
+            "by what it used (credits_detail)."
         ),
         "inputSchema": {
             "type": "object",
@@ -1566,8 +1570,11 @@ TOOLS = [
             "three routes delivers is not read (nothing billed); search engines, social "
             "networks and non-public addresses are never read. LATENCY 1-90 SECONDS. COST "
             "paid plans: the page (1 plain request, 4 residential route, 15 read in a "
-            "browser) + 1 when the page carries its own product data or + 5 when the model "
-            "reads it; + 10 for a matched listing; a page not read is free."
+            "browser, + 12 for each further browser try) + 1 when the page carries its own "
+            "product data or + 5 when the model reads it; + 10 for a matched listing; a page "
+            "not read is free. A call that uses more than its listed price covers (several "
+            "browser tries, a very large page, a long model read) is billed by what it used "
+            "(credits_detail)."
         ),
         "inputSchema": {
             "type": "object",
@@ -1621,7 +1628,10 @@ TOOLS = [
             "and non-public addresses are never read; a page that none of the three routes "
             "delivers is not read (nothing billed). LATENCY 1-90 SECONDS. COST paid plans: 1 "
             "credit (plain request), 4 (residential route) or 15 (read in a browser) per page "
-            "delivered; a page not read is free."
+            "delivered, + 12 for each further browser try (at most 2); a page not read is "
+            "free. A call that uses more than its listed price covers (several browser tries, "
+            "a very large page, a long model read) is billed by what it used "
+            "(credits_detail)."
         ),
         "inputSchema": {
             "type": "object",
