@@ -120,27 +120,30 @@ TOOLS = [
             "also carry also_observed_on: the other Amazon marketplaces where we hold the "
             "ASIN, with that marketplace's price and dates (observed there, not a claim that "
             "it sells there). [] = none found, null = the lookup did not complete. "
-            "MARKETPLACES us, uk, de, ca, au, fr, it, es, jp, mx, br, walmart. Walmart takes "
-            "a numeric item ID (or gtin= with the item's UPC) and returns the intelligence "
-            "blocks plus its listing content: image_url, description, breadcrumbs, highlights "
-            "(spec name/value pairs), warnings, upc, rating/review_count, was_price, "
-            "in_stock, and shipping_cost per seller; mode=live reads the walmart.com page now "
-            "(2 credits, typically 8-15 s, one page: the cheapest other seller is not "
-            "fetched; location names the store it was priced for) and mode=auto serves our "
-            "record when observed within max_age_days, else reads live. COST paid plans only: "
-            "the user signs in with their Logimu account or passes an API key (the no-signup "
-            "lane has the shopping tool only). 0.5 credits from cache with everything "
-            "included - bsr_history and offer_history too, no extra charge since 2026-10-10 - "
-            "and 1 for a live scrape (2 on Walmart); history_only=true returns just the "
-            "history series (rank, offers, buy-box price, rating_history, "
-            "rating_breakdown_history) for 0.05 credit. Misses and partial scrapes are never "
-            "billed; a miss may return a hint (found on another marketplace, or retry with "
-            "mode=live). SELLER FEEDBACK (2026-09-18): every response carries seller_ratings "
-            "- one entry per seller the answer names (current offers, cheapest new/used, "
-            "buy-box holder and, with offer_history, every historical seller) with "
-            "seller_positive_pct, seller_feedback_count, seller_rating and observed_at from a "
-            "nightly seller-feedback table; offer_history.sellers[] rows carry the same "
-            "fields directly. Amazon's own offers have no feedback. Not billed."
+            "MARKETPLACES us, uk, de, ca, au, fr, it, es, jp, mx, br, walmart, and nl, be "
+            "(amazon.nl, amazon.com.be: read on demand only - a live read is saved and later "
+            "served by mode=cache / history_only, nothing re-reads them on a schedule, no "
+            "tracking). Walmart takes a numeric item ID (or gtin= with the item's UPC) and "
+            "returns the intelligence blocks plus its listing content: image_url, "
+            "description, breadcrumbs, highlights (spec name/value pairs), warnings, upc, "
+            "rating/review_count, was_price, in_stock, and shipping_cost per seller; "
+            "mode=live reads the walmart.com page now (2 credits, typically 8-15 s, one page: "
+            "the cheapest other seller is not fetched; location names the store it was priced "
+            "for) and mode=auto serves our record when observed within max_age_days, else "
+            "reads live. COST paid plans only: the user signs in with their Logimu account or "
+            "passes an API key (the no-signup lane has the shopping tool only). 0.5 credits "
+            "from cache with everything included - bsr_history and offer_history too, no "
+            "extra charge since 2026-10-10 - and 1 for a live scrape (2 on Walmart); "
+            "history_only=true returns just the history series (rank, offers, buy-box price, "
+            "rating_history, rating_breakdown_history) for 0.05 credit. Misses and partial "
+            "scrapes are never billed; a miss may return a hint (found on another "
+            "marketplace, or retry with mode=live). SELLER FEEDBACK (2026-09-18): every "
+            "response carries seller_ratings - one entry per seller the answer names (current "
+            "offers, cheapest new/used, buy-box holder and, with offer_history, every "
+            "historical seller) with seller_positive_pct, seller_feedback_count, "
+            "seller_rating and observed_at from a nightly seller-feedback table; "
+            "offer_history.sellers[] rows carry the same fields directly. Amazon's own offers "
+            "have no feedback. Not billed."
         ),
         "inputSchema": {
             "type": "object",
@@ -178,14 +181,17 @@ TOOLS = [
                         "jp",
                         "mx",
                         "br",
+                        "nl",
+                        "be",
                         "walmart",
                     ],
                     "default": "us",
                     "description": (
                         "Marketplace to look the product up in. Amazon: us, uk, de, ca, au, "
-                        "fr, it, es, jp, mx, br. walmart = Walmart US (United States only). "
-                        "Pick the marketplace matching the user's country or locale when "
-                        "known (a German user -> de, a Canadian user -> ca); default us."
+                        "fr, it, es, jp, mx, br; nl, be read on demand only (live reads, no "
+                        "tracking). walmart = Walmart US (United States only). Pick the "
+                        "marketplace matching the user's country or locale when known (a "
+                        "German user -> de, a Canadian user -> ca); default us."
                     ),
                 },
                 "mode": {
@@ -1038,19 +1044,20 @@ TOOLS = [
             "it. LATENCY is SECONDS — typically ~8-13s, up to ~90s when the retry ladder "
             "runs; tell the user it is a live fetch. Every call is live: there is no cached "
             "SERP and no mode parameter. MARKETPLACES us, uk, de, ca, au, fr, it, es, jp, mx, "
-            "br, walmart (live walmart.com search: 2 credits per results page, at most 3 "
-            "pages a call, location names the store it was priced for; category_id and "
-            "refinements are Amazon-only). COST API key required (the free no-signup lane "
-            "cannot run live fetches). 1 credit per page ACTUALLY fetched — max_page=3 can "
-            "stop at 2 when Amazon runs out; blocked fetches (502) and empty result sets are "
-            "never billed. ZIP (2026-10-29, country=us only): pass zip (a US 5-digit ZIP) to "
-            "search as a shopper at that ZIP sees it - a plain search at a city ZIP lists the "
-            "local stores' items (Whole Foods, Amazon Fresh, local partners) beside shipped "
-            "ones; store=wholefoods|fresh runs Amazon's own storefront search for that "
-            "store's assortment at the ZIP. USE WHEN the user asks what a recipient at a ZIP "
-            "can buy (groceries, same-day items), which store carries a query locally, or "
-            "delivery fees / windows / minimums per item. The answer adds location (the "
-            "result page's confirmed 'Deliver to'), store, empty_reason (null with results; "
+            "br, nl, be (amazon.nl, amazon.com.be: read on demand only), walmart (live "
+            "walmart.com search: 2 credits per results page, at most 3 pages a call, location "
+            "names the store it was priced for; category_id and refinements are Amazon-only). "
+            "COST API key required (the free no-signup lane cannot run live fetches). 1 "
+            "credit per page ACTUALLY fetched — max_page=3 can stop at 2 when Amazon runs "
+            "out; blocked fetches (502) and empty result sets are never billed. ZIP "
+            "(2026-10-29, country=us only): pass zip (a US 5-digit ZIP) to search as a "
+            "shopper at that ZIP sees it - a plain search at a city ZIP lists the local "
+            "stores' items (Whole Foods, Amazon Fresh, local partners) beside shipped ones; "
+            "store=wholefoods|fresh runs Amazon's own storefront search for that store's "
+            "assortment at the ZIP. USE WHEN the user asks what a recipient at a ZIP can buy "
+            "(groceries, same-day items), which store carries a query locally, or delivery "
+            "fees / windows / minimums per item. The answer adds location (the result page's "
+            "confirmed 'Deliver to'), store, empty_reason (null with results; "
             "no_results_at_zip or store_nothing_for_query_at_zip - the latter cannot tell a "
             "store that skips the ZIP from one with no match for the query), observed_at and "
             "request_metadata.zip_session (new | reused: a session at a ZIP is kept a few "
@@ -1096,12 +1103,14 @@ TOOLS = [
                         "jp",
                         "mx",
                         "br",
+                        "nl",
+                        "be",
                         "walmart",
                     ],
                     "default": "us",
                     "description": (
-                        "Amazon marketplace to search, or walmart (a live walmart.com "
-                        "search)."
+                        "Amazon marketplace to search (nl, be: amazon.nl, amazon.com.be, read "
+                        "on demand only), or walmart (a live walmart.com search)."
                     ),
                 },
                 "page": {"type": "integer", "default": 1, "description": "Start page (1-10)."},
@@ -1292,10 +1301,11 @@ TOOLS = [
             "confirmed by a second, independent fetch before it is served; a fetch that fails "
             "is reported as an error, never as no sellers. LATENCY is SECONDS: typically "
             "4-12s (one page ~4s; a long list walks every page). MARKETPLACES us, uk, de, ca, "
-            "au, fr, it, es, jp, mx, br (no Walmart). COST API key required (the free "
-            "no-signup lane cannot run live fetches). 0.5 credit when the answer carries at "
-            "least one offer; a no-offers answer, an ASIN Amazon does not have, a barcode "
-            "nothing resolves and a failed or busy fetch are never billed."
+            "au, fr, it, es, jp, mx, br, nl, be (nl, be: amazon.nl, amazon.com.be, read on "
+            "demand only; no Walmart). COST API key required (the free no-signup lane cannot "
+            "run live fetches). 0.5 credit when the answer carries at least one offer; a "
+            "no-offers answer, an ASIN Amazon does not have, a barcode nothing resolves and a "
+            "failed or busy fetch are never billed."
         ),
         "inputSchema": {
             "type": "object",
@@ -1321,7 +1331,21 @@ TOOLS = [
                 },
                 "country": {
                     "type": "string",
-                    "enum": ["us", "uk", "de", "ca", "au", "fr", "it", "es", "jp", "mx", "br"],
+                    "enum": [
+                        "us",
+                        "uk",
+                        "de",
+                        "ca",
+                        "au",
+                        "fr",
+                        "it",
+                        "es",
+                        "jp",
+                        "mx",
+                        "br",
+                        "nl",
+                        "be",
+                    ],
                     "default": "us",
                     "description": "The Amazon marketplace to read the offers page on.",
                 },

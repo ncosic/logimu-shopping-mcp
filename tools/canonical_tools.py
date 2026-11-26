@@ -63,6 +63,9 @@ fails when mcp.py's block is not what gen.py renders.
 1.24.0 against this file's 1.13.7. Since 11-08 the catalog had been edited into mcp.py by hand: five web tools
 (web_offers, web_identify, web_product, web_page, web_history; 1.18.0-1.23.0), the 6h tracking interval and the
 6h batch schedule (P202, 1.24.0), and description updates on the others. 25 -> 30 tools.
+2026-11-26 (1.26.0): Amazon NL / BE (amazon.nl, amazon.com.be) on product, offers and serp only - read on demand,
+saved like the others, nothing re-reads them on a schedule (brand-intel app/services/live_only.py; switched on by the
+data-api's LOGIMU_LIVE_ONLY_MARKETPLACES, "not available yet" until then). Every other tool's country enum stays at 11.
 """
 TOOLS = [
     {
@@ -160,7 +163,10 @@ TOOLS = [
             "also carry also_observed_on: the other Amazon marketplaces where we hold the "
             "ASIN, with that marketplace's price and dates (observed there, not a claim that "
             "it sells there). [] = none found, null = the lookup did not complete. "
-            "MARKETPLACES us, uk, de, ca, au, fr, it, es, jp, mx, br, walmart. Walmart takes "
+            "MARKETPLACES us, uk, de, ca, au, fr, it, es, jp, mx, br, walmart, and nl, be "
+            "(amazon.nl, amazon.com.be: read on demand only - a live read is saved and later "
+            "served by mode=cache / history_only, nothing re-reads them on a schedule, no "
+            "tracking). Walmart takes "
             "a numeric item ID (or gtin= with the item's UPC) and returns the intelligence "
             "blocks plus its listing content: image_url, description, breadcrumbs, highlights "
             "(spec name/value pairs), warnings, upc, rating/review_count, was_price, "
@@ -218,12 +224,15 @@ TOOLS = [
                         "jp",
                         "mx",
                         "br",
+                        "nl",
+                        "be",
                         "walmart",
                     ],
                     "default": "us",
                     "description": (
                         "Marketplace to look the product up in. Amazon: us, uk, de, ca, au, "
-                        "fr, it, es, jp, mx, br. walmart = Walmart US (United States only). "
+                        "fr, it, es, jp, mx, br; nl, be read on demand only (live reads, no "
+                        "tracking). walmart = Walmart US (United States only). "
                         "Pick the marketplace matching the user's country or locale when "
                         "known (a German user -> de, a Canadian user -> ca); default us."
                     ),
@@ -1078,7 +1087,8 @@ TOOLS = [
             "it. LATENCY is SECONDS — typically ~8-13s, up to ~90s when the retry ladder "
             "runs; tell the user it is a live fetch. Every call is live: there is no cached "
             "SERP and no mode parameter. MARKETPLACES us, uk, de, ca, au, fr, it, es, jp, mx, "
-            "br, walmart (live walmart.com search: 2 credits per results page, at most 3 "
+            "br, nl, be (amazon.nl, amazon.com.be: read on demand only), walmart (live "
+            "walmart.com search: 2 credits per results page, at most 3 "
             "pages a call, location names the store it was priced for; category_id and "
             "refinements are Amazon-only). COST API key required (the free no-signup lane "
             "cannot run live fetches). 1 credit per page ACTUALLY fetched — max_page=3 can "
@@ -1136,12 +1146,14 @@ TOOLS = [
                         "jp",
                         "mx",
                         "br",
+                        "nl",
+                        "be",
                         "walmart",
                     ],
                     "default": "us",
                     "description": (
-                        "Amazon marketplace to search, or walmart (a live walmart.com "
-                        "search)."
+                        "Amazon marketplace to search (nl, be: amazon.nl, amazon.com.be, read "
+                        "on demand only), or walmart (a live walmart.com search)."
                     ),
                 },
                 "page": {"type": "integer", "default": 1, "description": "Start page (1-10)."},
@@ -1332,7 +1344,8 @@ TOOLS = [
             "confirmed by a second, independent fetch before it is served; a fetch that fails "
             "is reported as an error, never as no sellers. LATENCY is SECONDS: typically "
             "4-12s (one page ~4s; a long list walks every page). MARKETPLACES us, uk, de, ca, "
-            "au, fr, it, es, jp, mx, br (no Walmart). COST API key required (the free "
+            "au, fr, it, es, jp, mx, br, nl, be (nl, be: amazon.nl, amazon.com.be, read on "
+            "demand only; no Walmart). COST API key required (the free "
             "no-signup lane cannot run live fetches). 0.5 credit when the answer carries at "
             "least one offer; a no-offers answer, an ASIN Amazon does not have, a barcode "
             "nothing resolves and a failed or busy fetch are never billed."
@@ -1361,7 +1374,7 @@ TOOLS = [
                 },
                 "country": {
                     "type": "string",
-                    "enum": ["us", "uk", "de", "ca", "au", "fr", "it", "es", "jp", "mx", "br"],
+                    "enum": ["us", "uk", "de", "ca", "au", "fr", "it", "es", "jp", "mx", "br", "nl", "be"],
                     "default": "us",
                     "description": "The Amazon marketplace to read the offers page on.",
                 },
